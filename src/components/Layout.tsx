@@ -4,9 +4,19 @@ import { useAuth } from "../contexts/AuthContext";
 
 // サイドバーのナビゲーションアイテム
 const navigationItems = [
-  { name: "ダッシュボード", path: "/" },
-  { name: "サンプルページ", path: "/sample" },
-  { name: "設定", path: "/settings" },
+  { name: "ホーム", path: "/", icon: "🏠" },
+  { name: "資産・投資管理", path: "/asset-management", icon: "💎" },
+  { name: "10年後シミュレーション", path: "/simulation", icon: "📊" },
+  { name: "税務最適化", path: "/tax-optimization", icon: "💰" },
+  { name: "会計データ連携・統合", path: "/accounting-integration", icon: "🔗" },
+  { name: "給与計算", path: "/payroll", icon: "💵" },
+  { name: "月次決算", path: "/monthly-closing", icon: "📋" },
+  { name: "キャッシュフロー", path: "/cashflow", icon: "💸" },
+  { name: "バランスシート", path: "/balance-sheet", icon: "⚖️" },
+  { name: "財務3表分析", path: "/financial-analysis", icon: "📈" },
+  { name: "レポート", path: "/reports", icon: "📄" },
+  { name: "税理士チャット", path: "/tax-accountant-chat", icon: "💬" },
+  { name: "設定", path: "/settings", icon: "⚙️" },
 ];
 
 interface LayoutProps {
@@ -31,11 +41,12 @@ const Layout = ({ children }: LayoutProps) => {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <span className="ml-2 text-xl font-bold">サンプルアプリ</span>
-              </div>
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <span className="text-2xl mr-2">💎</span>
+              <span className="text-xl font-bold text-blue-600">WealthPath</span>
             </div>
+          </div>
             <div className="flex items-center">
               <div className="hidden md:ml-4 md:flex md:items-center">
                 <div className="ml-3 relative">
@@ -94,6 +105,7 @@ const Layout = ({ children }: LayoutProps) => {
                       : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
                   }`}
                 >
+                  <span className="mr-2">{item.icon}</span>
                   {item.name}
                 </Link>
               ))}
@@ -145,6 +157,7 @@ const Layout = ({ children }: LayoutProps) => {
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
+                    <span className="mr-2">{item.icon}</span>
                     {item.name}
                   </Link>
                 ))}
