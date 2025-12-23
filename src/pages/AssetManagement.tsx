@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Modal from "react-modal";
 import {
   Wallet,
   TrendingUp,
@@ -20,6 +21,9 @@ import {
   Pie,
   Cell,
 } from "recharts";
+
+// react-modalの設定
+Modal.setAppElement('#root');
 
 const AssetManagement = () => {
   const [viewMode, setViewMode] = useState<"integrated" | "personal" | "business">(
@@ -196,7 +200,7 @@ const AssetManagement = () => {
 
   // 個人投資の操作関数
   const handleAddInvestment = () => {
-    setEditingInvestment({
+    const newInvestment = {
       id: 0,
       name: "",
       category: "投資信託",
@@ -213,29 +217,31 @@ const AssetManagement = () => {
       propertyPrice: 0,
       monthlyLoanPayment: 0,
       monthlyRent: 0,
-    });
+    };
+    setEditingInvestment(newInvestment);
     setShowAddInvestmentModal(true);
   };
 
   const handleEditInvestment = (investment: any) => {
+    // 編集用に投資データのコピーを作成
     setEditingInvestment({ ...investment });
     setShowEditInvestmentModal(true);
   };
 
-  const handleSaveInvestment = () => {
-    if (showEditInvestmentModal && editingInvestment) {
-      // 編集モード
+  const handleSaveInvestment = (savedInvestment: any) => {
+    if (showEditInvestmentModal) {
+      // 編集モード：personalInvestmentsを更新
       setPersonalInvestments(personalInvestments.map(inv => 
-        inv.id === editingInvestment.id ? editingInvestment : inv
+        inv.id === savedInvestment.id ? savedInvestment : inv
       ));
       setShowEditInvestmentModal(false);
       setEditingInvestment(null);
-    } else if (showAddInvestmentModal && editingInvestment) {
+    } else if (showAddInvestmentModal) {
       // 新規追加モード
       const newId = Math.max(...personalInvestments.map(inv => inv.id), 0) + 1;
       setPersonalInvestments([
         ...personalInvestments,
-        { ...editingInvestment, id: newId }
+        { ...savedInvestment, id: newId }
       ]);
       setShowAddInvestmentModal(false);
       setEditingInvestment(null);
@@ -251,12 +257,11 @@ const AssetManagement = () => {
   const handleDeleteInvestment = (id: number) => {
     if (window.confirm('この投資商品を削除してもよろしいですか？')) {
       setPersonalInvestments(personalInvestments.filter(inv => inv.id !== id));
+      setShowEditInvestmentModal(false);
+      setEditingInvestment(null);
     }
   };
 
-  const updateEditingInvestmentField = (field: string, value: any) => {
-    setEditingInvestment((prev: any) => ({ ...prev, [field]: value }));
-  };
 
   // 投資商品の色を統一するヘルパー関数
   const getInvestmentColor = (investmentId: number) => {
@@ -1053,6 +1058,39 @@ const AssetManagement = () => {
 
   // 個人投資ビュー
   const PersonalView = () => {
+    // モーダル内で使用するローカルstate（編集中の変更は保存まで反映しない）
+    const [localEditingInvestment, setLocalEditingInvestment] = useState<any>(null);
+
+    // モーダルが開いたときにローカルstateを初期化
+    useState(() => {
+      if (editingInvestment && (showEditInvestmentModal || showAddInvestmentModal)) {
+        setLocalEditingInvestment({ ...editingInvestment });
+      }
+    });
+
+    const updateLocalField = (field: string, value: any) => {
+      setLocalEditingInvestment((prev: any) => ({ ...prev, [field]: value }));
+    };
+
+    const handleLocalSave = () => {
+      if (localEditingInvestment) {
+        handleSaveInvestment(localEditingInvestment);
+        setLocalEditingInvestment(null);
+      }
+    };
+
+    const handleLocalDelete = () => {
+      if (localEditingInvestment) {
+        handleDeleteInvestment(localEditingInvestment.id);
+        setLocalEditingInvestment(null);
+      }
+    };
+
+    const handleLocalCancel = () => {
+      handleCancelInvestmentEdit();
+      setLocalEditingInvestment(null);
+    };
+
     // 全ての投資をグラフに表示（借入ありも資産価値として表示）
     const allInvestments = personalInvestments;
     
@@ -1517,45 +1555,48 @@ const AssetManagement = () => {
       </div>
 
       {/* 投資商品編集・追加モーダル */}
-      {(showEditInvestmentModal || showAddInvestmentModal) && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={handleCancelInvestmentEdit}
-        >
-          <div 
-            className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-            key={editingInvestment?.id || 'new'}
-          >
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
-                {showAddInvestmentModal ? "投資商品を追加" : "投資商品を編集"}
-              </h3>
+      <Modal
+        isOpen={showEditInvestmentModal || showAddInvestmentModal}
+        onRequestClose={handleLocalCancel}
+        onAfterOpen={() => {
+          // モーダルが開いたときにローカルstateを初期化
+          if (editingInvestment) {
+            setLocalEditingInvestment({ ...editingInvestment });
+          }
+        }}
+        contentLabel={showAddInvestmentModal ? "投資商品を追加" : "投資商品を編集"}
+        className="max-w-3xl w-full bg-white rounded-xl shadow-2xl outline-none max-h-[90vh] overflow-y-auto mx-4"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      >
+        <div className="p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-6">
+            {showAddInvestmentModal ? "投資商品を追加" : "投資商品を編集"}
+          </h3>
 
-              <div className="space-y-6">
-                {/* 基本情報 */}
-                <div className="bg-gray-50 rounded-lg p-4">
+          <div className="space-y-6">
+            {/* 基本情報 */}
+            <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="font-bold text-gray-900 mb-4">基本情報</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        投資商品名 <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={editingInvestment?.name || ''}
-                        onChange={(e) => updateEditingInvestmentField('name', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="NISA（つみたて）"
-                      />
-          </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    投資商品名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={localEditingInvestment?.name || ''}
+                    onChange={(e) => updateLocalField('name', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="NISA（つみたて）"
+                  />
+                </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         カテゴリ
                       </label>
                       <select
-                        value={editingInvestment?.category || '投資信託'}
-                        onChange={(e) => updateEditingInvestmentField('category', e.target.value)}
+                        value={localEditingInvestment?.category || '投資信託'}
+                        onChange={(e) => updateLocalField('category', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="投資信託">投資信託</option>
@@ -1566,7 +1607,7 @@ const AssetManagement = () => {
                         <option value="暗号資産">暗号資産</option>
                         <option value="その他">その他</option>
                       </select>
-              </div>
+                    </div>
           </div>
 
                   {/* 借入返済フラグ */}
@@ -1574,8 +1615,8 @@ const AssetManagement = () => {
                     <label className="flex items-center gap-2 cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <input
                         type="checkbox"
-                        checked={editingInvestment?.hasLoan || false}
-                        onChange={(e) => updateEditingInvestmentField('hasLoan', e.target.checked)}
+                        checked={localEditingInvestment?.hasLoan || false}
+                        onChange={(e) => updateLocalField('hasLoan', e.target.checked)}
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
             <div>
@@ -1588,15 +1629,15 @@ const AssetManagement = () => {
                   </div>
 
                   {/* 投資タイプ（借入なしの場合のみ表示） */}
-                  {!editingInvestment?.hasLoan && (
+                  {!localEditingInvestment?.hasLoan && (
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         投資タイプ <span className="text-red-500">*</span>
                       </label>
                       <select
-                        value={editingInvestment?.investmentType || 'accumulation'}
-                        onChange={(e) => updateEditingInvestmentField('investmentType', e.target.value)}
+                        value={localEditingInvestment?.investmentType || 'accumulation'}
+                        onChange={(e) => updateLocalField('investmentType', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="accumulation">積立投資（毎月定額）</option>
@@ -1604,9 +1645,9 @@ const AssetManagement = () => {
                         <option value="fixed">定額貯金（単利）</option>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">
-                        {editingInvestment?.investmentType === 'accumulation' && '毎月定額を積み立て、複利で運用します'}
-                        {editingInvestment?.investmentType === 'lumpsum' && '初期投資額が複利で成長します'}
-                        {editingInvestment?.investmentType === 'fixed' && '固定利率で単利計算します'}
+                        {localEditingInvestment?.investmentType === 'accumulation' && '毎月定額を積み立て、複利で運用します'}
+                        {localEditingInvestment?.investmentType === 'lumpsum' && '初期投資額が複利で成長します'}
+                        {localEditingInvestment?.investmentType === 'fixed' && '固定利率で単利計算します'}
                       </p>
                     </div>
                   <div>
@@ -1616,8 +1657,8 @@ const AssetManagement = () => {
                     <input
                       type="number"
                       step="0.1"
-                      value={editingInvestment?.returnRate || ''}
-                      onChange={(e) => updateEditingInvestmentField('returnRate', e.target.value === '' ? 0 : Number(e.target.value))}
+                      value={localEditingInvestment?.returnRate || ''}
+                      onChange={(e) => updateLocalField('returnRate', e.target.value === '' ? 0 : Number(e.target.value))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="5.0"
                     />
@@ -1629,7 +1670,7 @@ const AssetManagement = () => {
                   )}
                   
                   {/* 想定年率（借入ありの場合のみ表示） */}
-                  {editingInvestment?.hasLoan && (
+                  {localEditingInvestment?.hasLoan && (
                     <div className="mt-4">
             <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1639,8 +1680,8 @@ const AssetManagement = () => {
                     <input
                       type="number"
                       step="0.1"
-                      value={editingInvestment?.returnRate || ''}
-                      onChange={(e) => updateEditingInvestmentField('returnRate', e.target.value === '' ? 0 : Number(e.target.value))}
+                      value={localEditingInvestment?.returnRate || ''}
+                      onChange={(e) => updateLocalField('returnRate', e.target.value === '' ? 0 : Number(e.target.value))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="5.0"
                     />
@@ -1656,8 +1697,8 @@ const AssetManagement = () => {
                     </label>
                     <input
                       type="date"
-                      value={editingInvestment?.startDate || ''}
-                      onChange={(e) => updateEditingInvestmentField('startDate', e.target.value)}
+                      value={localEditingInvestment?.startDate || ''}
+                      onChange={(e) => updateLocalField('startDate', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
               </div>
@@ -1667,8 +1708,8 @@ const AssetManagement = () => {
                     </label>
                     <input
                       type="date"
-                      value={editingInvestment?.endDate || ''}
-                      onChange={(e) => updateEditingInvestmentField('endDate', e.target.value)}
+                      value={localEditingInvestment?.endDate || ''}
+                      onChange={(e) => updateLocalField('endDate', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
               </div>
@@ -1679,8 +1720,8 @@ const AssetManagement = () => {
                     <div className="flex items-center gap-4">
                       <input
                         type="color"
-                        value={editingInvestment?.color || '#3b82f6'}
-                        onChange={(e) => updateEditingInvestmentField('color', e.target.value)}
+                        value={localEditingInvestment?.color || '#3b82f6'}
+                        onChange={(e) => updateLocalField('color', e.target.value)}
                         className="h-10 w-20 rounded border border-gray-300 cursor-pointer"
                       />
                       <div className="flex items-center gap-2">
@@ -1688,8 +1729,8 @@ const AssetManagement = () => {
                         <div 
                           className="w-16 h-8 rounded border-2"
                           style={{ 
-                            backgroundColor: (editingInvestment?.color || '#3b82f6') + '20',
-                            borderColor: (editingInvestment?.color || '#3b82f6') + '60'
+                            backgroundColor: (localEditingInvestment?.color || '#3b82f6') + '20',
+                            borderColor: (localEditingInvestment?.color || '#3b82f6') + '60'
                           }}
                 ></div>
             </div>
@@ -1698,7 +1739,7 @@ const AssetManagement = () => {
             </div>
 
                 {/* 金額情報（借入なしの場合） */}
-                {!editingInvestment?.hasLoan && (
+                {!localEditingInvestment?.hasLoan && (
                   <div className="bg-blue-50 rounded-lg p-4">
                     <h3 className="font-bold text-gray-900 mb-4">金額情報</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1708,8 +1749,8 @@ const AssetManagement = () => {
                         </label>
                         <input
                           type="number"
-                          value={editingInvestment?.principal || ''}
-                          onChange={(e) => updateEditingInvestmentField('principal', e.target.value === '' ? 0 : Number(e.target.value))}
+                          value={localEditingInvestment?.principal || ''}
+                          onChange={(e) => updateLocalField('principal', e.target.value === '' ? 0 : Number(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="200"
                         />
@@ -1720,8 +1761,8 @@ const AssetManagement = () => {
                         </label>
                         <input
                           type="number"
-                          value={editingInvestment?.currentValue || ''}
-                          onChange={(e) => updateEditingInvestmentField('currentValue', e.target.value === '' ? 0 : Number(e.target.value))}
+                          value={localEditingInvestment?.currentValue || ''}
+                          onChange={(e) => updateLocalField('currentValue', e.target.value === '' ? 0 : Number(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="230"
                         />
@@ -1729,19 +1770,19 @@ const AssetManagement = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           月間積立額（万円）
-                          {editingInvestment?.investmentType !== 'accumulation' && 
+                          {localEditingInvestment?.investmentType !== 'accumulation' && 
                             <span className="text-xs text-gray-500 ml-2">(積立投資のみ有効)</span>
                           }
                         </label>
                         <input
                           type="number"
-                          value={editingInvestment?.monthlyContribution || ''}
-                          onChange={(e) => updateEditingInvestmentField('monthlyContribution', e.target.value === '' ? 0 : Number(e.target.value))}
+                          value={localEditingInvestment?.monthlyContribution || ''}
+                          onChange={(e) => updateLocalField('monthlyContribution', e.target.value === '' ? 0 : Number(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="3.33"
-                          disabled={editingInvestment?.investmentType !== 'accumulation'}
+                          disabled={localEditingInvestment?.investmentType !== 'accumulation'}
                         />
-                        {editingInvestment?.investmentType === 'accumulation' && (
+                        {localEditingInvestment?.investmentType === 'accumulation' && (
                           <p className="text-xs text-gray-500 mt-1">
                             複利計算でグラフに反映されます
                           </p>
@@ -1752,7 +1793,7 @@ const AssetManagement = () => {
                 )}
 
                 {/* 不動産投資専用フィールド（借入ありの場合） */}
-                {editingInvestment?.hasLoan && (
+                {localEditingInvestment?.hasLoan && (
                   <div className="bg-pink-50 rounded-lg p-4">
                     <h3 className="font-bold text-gray-900 mb-4">借入投資情報</h3>
                     <p className="text-xs text-gray-600 mb-4 p-2 bg-white rounded border border-pink-200">
@@ -1765,8 +1806,8 @@ const AssetManagement = () => {
                         </label>
                         <input
                           type="number"
-                          value={editingInvestment?.propertyPrice || ''}
-                          onChange={(e) => updateEditingInvestmentField('propertyPrice', e.target.value === '' ? 0 : Number(e.target.value))}
+                          value={localEditingInvestment?.propertyPrice || ''}
+                          onChange={(e) => updateLocalField('propertyPrice', e.target.value === '' ? 0 : Number(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="2500"
                         />
@@ -1780,8 +1821,8 @@ const AssetManagement = () => {
                         </label>
                         <input
                           type="number"
-                          value={editingInvestment?.principal || ''}
-                          onChange={(e) => updateEditingInvestmentField('principal', e.target.value === '' ? 0 : Number(e.target.value))}
+                          value={localEditingInvestment?.principal || ''}
+                          onChange={(e) => updateLocalField('principal', e.target.value === '' ? 0 : Number(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="500"
                         />
@@ -1795,8 +1836,8 @@ const AssetManagement = () => {
                         </label>
                         <input
                           type="number"
-                          value={editingInvestment?.currentValue || ''}
-                          onChange={(e) => updateEditingInvestmentField('currentValue', e.target.value === '' ? 0 : Number(e.target.value))}
+                          value={localEditingInvestment?.currentValue || ''}
+                          onChange={(e) => updateLocalField('currentValue', e.target.value === '' ? 0 : Number(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="520"
                         />
@@ -1813,8 +1854,8 @@ const AssetManagement = () => {
                         <input
                           type="number"
                           step="0.1"
-                          value={editingInvestment?.monthlyLoanPayment || ''}
-                          onChange={(e) => updateEditingInvestmentField('monthlyLoanPayment', e.target.value === '' ? 0 : Number(e.target.value))}
+                          value={localEditingInvestment?.monthlyLoanPayment || ''}
+                          onChange={(e) => updateLocalField('monthlyLoanPayment', e.target.value === '' ? 0 : Number(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="10.0"
                         />
@@ -1829,8 +1870,8 @@ const AssetManagement = () => {
                         <input
                           type="number"
                           step="0.1"
-                          value={editingInvestment?.monthlyRent || ''}
-                          onChange={(e) => updateEditingInvestmentField('monthlyRent', e.target.value === '' ? 0 : Number(e.target.value))}
+                          value={localEditingInvestment?.monthlyRent || ''}
+                          onChange={(e) => updateLocalField('monthlyRent', e.target.value === '' ? 0 : Number(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="12.0"
                         />
@@ -1842,8 +1883,8 @@ const AssetManagement = () => {
                     <div className="mt-4 p-3 bg-white rounded border border-pink-200">
                       <div className="text-xs text-gray-600 mb-1">月間キャッシュフロー</div>
                       <div className="text-lg font-bold text-gray-900">
-                        {((editingInvestment?.monthlyRent || 0) - (editingInvestment?.monthlyLoanPayment || 0)) >= 0 ? '+' : ''}
-                        ¥{((editingInvestment?.monthlyRent || 0) - (editingInvestment?.monthlyLoanPayment || 0)).toFixed(1)}万
+                        {((localEditingInvestment?.monthlyRent || 0) - (localEditingInvestment?.monthlyLoanPayment || 0)) >= 0 ? '+' : ''}
+                        ¥{((localEditingInvestment?.monthlyRent || 0) - (localEditingInvestment?.monthlyLoanPayment || 0)).toFixed(1)}万
               </div>
                       <p className="text-xs text-gray-500 mt-1">
                         家賃収入 - ローン返済 = 月間CF
@@ -1855,26 +1896,26 @@ const AssetManagement = () => {
                 {/* プレビュー */}
                 <div className="bg-green-50 rounded-lg p-4">
                   <h3 className="font-bold text-gray-900 mb-4">リアルタイムプレビュー</h3>
-                  {editingInvestment?.category === '不動産' ? (
+                  {localEditingInvestment?.category === '不動産' ? (
                     // 不動産用プレビュー
                     <div className="grid grid-cols-3 gap-4">
                       <div>
                         <div className="text-xs text-gray-600 mb-1">初期ローン額</div>
                         <div className="text-lg font-bold text-gray-900">
-                          ¥{((editingInvestment?.propertyPrice || 0) - (editingInvestment?.principal || 0)).toFixed(1)}万
+                          ¥{((localEditingInvestment?.propertyPrice || 0) - (localEditingInvestment?.principal || 0)).toFixed(1)}万
           </div>
         </div>
                       <div>
                         <div className="text-xs text-gray-600 mb-1">月間CF</div>
                         <div className="text-lg font-bold text-blue-600">
-                          {((editingInvestment?.monthlyRent || 0) - (editingInvestment?.monthlyLoanPayment || 0)) >= 0 ? '+' : ''}
-                          ¥{((editingInvestment?.monthlyRent || 0) - (editingInvestment?.monthlyLoanPayment || 0)).toFixed(1)}万
+                          {((localEditingInvestment?.monthlyRent || 0) - (localEditingInvestment?.monthlyLoanPayment || 0)) >= 0 ? '+' : ''}
+                          ¥{((localEditingInvestment?.monthlyRent || 0) - (localEditingInvestment?.monthlyLoanPayment || 0)).toFixed(1)}万
       </div>
                 </div>
                 <div>
                         <div className="text-xs text-gray-600 mb-1">純資産（現在）</div>
                         <div className="text-lg font-bold text-green-600">
-                          ¥{(editingInvestment?.currentValue || 0).toFixed(1)}万
+                          ¥{(localEditingInvestment?.currentValue || 0).toFixed(1)}万
                 </div>
               </div>
             </div>
@@ -1884,15 +1925,15 @@ const AssetManagement = () => {
                       <div>
                         <div className="text-xs text-gray-600 mb-1">評価損益</div>
                         <div className="text-lg font-bold text-green-600">
-                          {((editingInvestment?.currentValue || 0) - (editingInvestment?.principal || 0)) >= 0 ? '+' : ''}
-                          ¥{((editingInvestment?.currentValue || 0) - (editingInvestment?.principal || 0)).toFixed(1)}万
+                          {((localEditingInvestment?.currentValue || 0) - (localEditingInvestment?.principal || 0)) >= 0 ? '+' : ''}
+                          ¥{((localEditingInvestment?.currentValue || 0) - (localEditingInvestment?.principal || 0)).toFixed(1)}万
         </div>
       </div>
                       <div>
                         <div className="text-xs text-gray-600 mb-1">リターン率</div>
                         <div className="text-lg font-bold text-blue-600">
-                          {(editingInvestment?.principal || 0) > 0 
-                            ? `${((((editingInvestment?.currentValue || 0) - (editingInvestment?.principal || 0)) / (editingInvestment?.principal || 1)) * 100).toFixed(1)}%`
+                          {(localEditingInvestment?.principal || 0) > 0 
+                            ? `${((((localEditingInvestment?.currentValue || 0) - (localEditingInvestment?.principal || 0)) / (localEditingInvestment?.principal || 1)) * 100).toFixed(1)}%`
                             : "-"
                           }
                         </div>
@@ -1900,7 +1941,7 @@ const AssetManagement = () => {
                       <div>
                         <div className="text-xs text-gray-600 mb-1">年間積立額</div>
                         <div className="text-lg font-bold text-gray-900">
-                          ¥{((editingInvestment?.monthlyContribution || 0) * 12).toFixed(1)}万
+                          ¥{((localEditingInvestment?.monthlyContribution || 0) * 12).toFixed(1)}万
                         </div>
                       </div>
                     </div>
@@ -1911,23 +1952,23 @@ const AssetManagement = () => {
                 <div className="flex gap-3 pt-4 border-t">
                   {showEditInvestmentModal && (
                     <button
-                      onClick={() => handleDeleteInvestment(editingInvestment.id)}
+                      onClick={handleLocalDelete}
                       className="px-6 py-3 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 font-medium"
                     >
                       削除
                     </button>
                   )}
                   <button
-                    onClick={handleCancelInvestmentEdit}
+                    onClick={handleLocalCancel}
                     className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
                   >
                     キャンセル
                   </button>
                   <button
-                    onClick={handleSaveInvestment}
-                    disabled={!editingInvestment?.name?.trim() || !editingInvestment?.startDate}
+                    onClick={handleLocalSave}
+                    disabled={!localEditingInvestment?.name?.trim() || !localEditingInvestment?.startDate}
                     className={`flex-1 px-6 py-3 rounded-lg font-medium ${
-                      editingInvestment?.name?.trim() && editingInvestment?.startDate
+                      localEditingInvestment?.name?.trim() && localEditingInvestment?.startDate
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
@@ -1935,11 +1976,9 @@ const AssetManagement = () => {
                     {showAddInvestmentModal ? "追加" : "保存"}
                   </button>
                 </div>
-                </div>
-              </div>
-            </div>
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
   };
