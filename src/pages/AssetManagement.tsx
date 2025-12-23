@@ -969,8 +969,10 @@ const AssetManagement = () => {
                   // 年間表示：過去12四半期
                   const quarters = [];
                   for (let q = 11; q >= 0; q--) {
-                    const quarterStartMonth = today.getMonth() - (q * 3);
-                    const quarterStartDate = new Date(today.getFullYear(), quarterStartMonth, 1);
+                    // 正しく年と月を計算
+                    const targetDate = new Date(today);
+                    targetDate.setMonth(today.getMonth() - (q * 3));
+                    const quarterStartDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
                     const year = quarterStartDate.getFullYear();
                     const quarter = Math.floor(quarterStartDate.getMonth() / 3) + 1;
                     quarters.push({
@@ -1185,8 +1187,10 @@ const AssetManagement = () => {
                 const quarters = [];
                 
                 for (let q = 11; q >= 0; q--) {
-                  const quarterStartMonth = today.getMonth() - (q * 3);
-                  const quarterStartDate = new Date(today.getFullYear(), quarterStartMonth, 1);
+                  // 正しく年と月を計算
+                  const targetDate = new Date(today);
+                  targetDate.setMonth(today.getMonth() - (q * 3));
+                  const quarterStartDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
                   const year = quarterStartDate.getFullYear();
                   const quarter = Math.floor(quarterStartDate.getMonth() / 3) + 1;
                   const quarterLabel = `${year}Q${quarter}`;
@@ -2275,8 +2279,12 @@ const AssetManagement = () => {
                 const today = new Date();
                 
                 for (let q = 11; q >= 0; q--) {
-                  const quarterStartMonth = today.getMonth() - (q * 3);
-                  const quarterStartDate = new Date(today.getFullYear(), quarterStartMonth, 1);
+                  // 正しく年と月を計算
+                  const targetDate = new Date(today);
+                  targetDate.setMonth(today.getMonth() - (q * 3));
+                  const quarterStartMonth = targetDate.getMonth();
+                  const quarterStartYear = targetDate.getFullYear();
+                  const quarterStartDate = new Date(quarterStartYear, quarterStartMonth, 1);
                   const year = quarterStartDate.getFullYear();
                   const quarter = Math.floor(quarterStartDate.getMonth() / 3) + 1;
                   const quarterLabel = `${year}Q${quarter}`;
@@ -2287,7 +2295,7 @@ const AssetManagement = () => {
                   
                   // 3ヶ月分を集計
                   for (let m = 0; m < 3; m++) {
-                    const date = new Date(today.getFullYear(), quarterStartMonth + m, 1);
+                    const date = new Date(quarterStartYear, quarterStartMonth + m, 1);
                     
                     businesses.forEach((business) => {
                       const startDate = business.startDate ? new Date(business.startDate) : null;
