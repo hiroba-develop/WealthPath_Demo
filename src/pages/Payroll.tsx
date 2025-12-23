@@ -290,7 +290,7 @@ const Payroll = () => {
       <h1 className="text-2xl font-semibold text-gray-900">給与計算</h1>
       <p className="mt-2 text-sm text-gray-600">
             役員報酬と従業員給与を一元管理し、個人と事業の資金フローを可視化します
-          </p>
+      </p>
         </div>
         <div className="flex space-x-3">
           {/* ビュー切り替えボタン */}

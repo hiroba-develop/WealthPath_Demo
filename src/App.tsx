@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Settings from "./pages/Settings";
 import WeeklyTasks from "./pages/WeeklyTasks";
 import AssetManagement from "./pages/AssetManagement";
+import InvestmentManagement from "./pages/InvestmentManagement";
 import TenYearSimulation from "./pages/TenYearSimulation";
 import TaxOptimization from "./pages/TaxOptimization";
 import AccountingIntegration from "./pages/AccountingIntegration";
@@ -78,6 +79,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <AssetManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/investment-management"
+        element={
+          <ProtectedRoute>
+            <InvestmentManagement />
           </ProtectedRoute>
         }
       />
