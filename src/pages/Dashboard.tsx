@@ -105,6 +105,7 @@ const ALL_ENTRIES: Entry[] = [
   { id:"b15", tab:"cost",      business:"Bコンサルティング", content:"SaaS各種サブスク",      occurred_at:`${PM}-01`,  due_at:"",                      amount:"4",    yield_rate:"", memo:"" },
 ];
 
+{/*
 // ── Compute summary figures ───────────────────────────────────────
 function sumTab(tab: DataTab, ym?: string): number {
   return ALL_ENTRIES
@@ -114,7 +115,7 @@ function sumTab(tab: DataTab, ym?: string): number {
 function countTab(tab: DataTab, ym: string): number {
   return ALL_ENTRIES.filter(e => e.tab === tab && toYM(e.occurred_at) === ym).length;
 }
-
+*/}
 const pAsset   = ALL_ENTRIES.filter(e => e.tab==="asset"     && e.business==="" ).reduce((s,e)=>s+parseAmt(e.amount),0);
 const pLiab    = ALL_ENTRIES.filter(e => e.tab==="liability"  && e.business==="" ).reduce((s,e)=>s+parseAmt(e.amount),0);
 const pRevTM   = ALL_ENTRIES.filter(e => e.tab==="revenue"    && e.business==="" && toYM(e.occurred_at)===TM).reduce((s,e)=>s+parseAmt(e.amount),0);
@@ -575,7 +576,7 @@ function MultiLineChart({ data, lines, unit, H = 180 }: {
     return null;
   }).filter(Boolean) as { i: number; label: string }[];
 
-  const zero = hasNeg ? yPos(0) : null;
+  //const zero = hasNeg ? yPos(0) : null;
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>

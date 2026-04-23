@@ -309,7 +309,7 @@ const summaryBase: { tab: DataTab; label: string; dotColor: string }[] = [
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────
-function emptyEntry(tab: DataTab, mode: Mode): Entry {
+function emptyEntry(tab: DataTab): Entry {
   return {
     id: crypto.randomUUID(), tab,
     business: "",
@@ -386,14 +386,24 @@ const PERSONAL_SAMPLE_ENTRIES: Entry[] = [
   { id: "p10", tab: "cost",      business: "", content: "家賃",                      occurred_at: `${TM}-01`,  due_at: "",                       amount: "12",   yield_rate: "",     memo: "" },
   { id: "p11", tab: "cost",      business: "", content: "生命保険・医療保険",         occurred_at: `${TM}-05`,  due_at: "",                       amount: "3",    yield_rate: "",     memo: "" },
   // 先月
-  { id: "p12", tab: "asset",     business: "", content: "楽天証券 日本株",            occurred_at: `${PM}-08`,  due_at: "",                       amount: "210",  yield_rate: "3.2",  memo: "トヨタ・ソニー等" },
-  { id: "p13", tab: "liability", business: "", content: "奨学金残高",                occurred_at: `${PM}-01`,  due_at: `${shiftYM(TM,24)}-01`,   amount: "130",  yield_rate: "",     memo: "毎月返済中" },
-  { id: "p14", tab: "revenue",   business: "", content: "給与（3月分）",             occurred_at: `${PM}-25`,  due_at: "",                       amount: "55",   yield_rate: "",     memo: "" },
-  { id: "p15", tab: "cost",      business: "", content: "食費・日用品",              occurred_at: `${PM}-31`,  due_at: "",                       amount: "8",    yield_rate: "",     memo: "" },
-  { id: "p16", tab: "cost",      business: "", content: "書籍・学習費",              occurred_at: `${PM}-15`,  due_at: "",                       amount: "2",    yield_rate: "",     memo: "" },
+  { id: "p12", tab: "asset",     business: "", content: "三菱UFJ定期預金",           occurred_at: `${PM}-05`,  due_at: "",                       amount: "500",  yield_rate: "0.2",  memo: "1年定期 自動更新" },
+  { id: "p13", tab: "asset",     business: "", content: "SBI証券 S&P500インデックス", occurred_at: `${PM}-10`,  due_at: "",                       amount: "298",  yield_rate: "7.0",  memo: "" },
+  { id: "p14", tab: "asset",     business: "", content: "自宅マンション（評価額）",    occurred_at: `${PM}-01`,  due_at: "",                       amount: "4200", yield_rate: "",     memo: "路線価ベース" },
+  { id: "p15", tab: "asset",     business: "", content: "iDeCo 全世界株式",           occurred_at: `${PM}-25`,  due_at: "",                       amount: "265",  yield_rate: "5.5",  memo: "" },
+  { id: "p16", tab: "asset",     business: "", content: "楽天証券 日本株",             occurred_at: `${PM}-08`,  due_at: "",                       amount: "210",  yield_rate: "3.2",  memo: "トヨタ・ソニー等" },
+  { id: "p17", tab: "liability", business: "", content: "住宅ローン残高",             occurred_at: `${PM}-01`,  due_at: `${shiftYM(TM,300)}-01`,  amount: "2808", yield_rate: "",     memo: "変動金利 0.475%" },
+  { id: "p18", tab: "liability", business: "", content: "カーローン",                 occurred_at: `${PM}-15`,  due_at: `${shiftYM(TM,36)}-15`,   amount: "185",  yield_rate: "",     memo: "残り3年" },
+  { id: "p19", tab: "liability", business: "", content: "奨学金残高",                 occurred_at: `${PM}-01`,  due_at: `${shiftYM(TM,24)}-01`,   amount: "135",  yield_rate: "",     memo: "毎月返済中" },
+  { id: "p20", tab: "revenue",   business: "", content: "給与（先月分）",             occurred_at: `${PM}-25`,  due_at: "",                       amount: "55",   yield_rate: "",     memo: "" },
+  { id: "p21", tab: "revenue",   business: "", content: "副業 Webライティング",        occurred_at: `${PM}-18`,  due_at: "",                       amount: "6",    yield_rate: "",     memo: "" },
+  { id: "p22", tab: "revenue",   business: "", content: "配当収入（国内株）",           occurred_at: `${PM}-28`,  due_at: "",                       amount: "12",   yield_rate: "",     memo: "12月権利確定分" },
+  { id: "p23", tab: "cost",      business: "", content: "家賃",                       occurred_at: `${PM}-01`,  due_at: "",                       amount: "12",   yield_rate: "",     memo: "" },
+  { id: "p24", tab: "cost",      business: "", content: "生命保険・医療保険",          occurred_at: `${PM}-05`,  due_at: "",                       amount: "3",    yield_rate: "",     memo: "" },
+  { id: "p25", tab: "cost",      business: "", content: "食費・日用品",               occurred_at: `${PM}-31`,  due_at: "",                       amount: "8",    yield_rate: "",     memo: "" },
+  { id: "p26", tab: "cost",      business: "", content: "書籍・学習費",               occurred_at: `${PM}-15`,  due_at: "",                       amount: "2",    yield_rate: "",     memo: "" },
   // 2ヶ月前
-  { id: "p17", tab: "asset",     business: "", content: "外貨預金（USD）",            occurred_at: `${PM2}-15`, due_at: "",                       amount: "95",   yield_rate: "1.5",  memo: "150円換算" },
-  { id: "p18", tab: "cost",      business: "", content: "年間保険料（一括）",         occurred_at: `${PM2}-05`, due_at: "",                       amount: "18",   yield_rate: "",     memo: "" },
+  { id: "p27", tab: "asset",     business: "", content: "外貨預金（USD）",            occurred_at: `${PM2}-15`, due_at: "",                       amount: "95",   yield_rate: "1.5",  memo: "150円換算" },
+  { id: "p28", tab: "cost",      business: "", content: "年間保険料（一括）",         occurred_at: `${PM2}-05`, due_at: "",                       amount: "18",   yield_rate: "",     memo: "" },
 ];
 
 // ── Component ────────────────────────────────────────────────────
@@ -404,7 +414,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
   const sampleEntries = mode === "business" ? BUSINESS_SAMPLE_ENTRIES : PERSONAL_SAMPLE_ENTRIES;
 
   const [activeTab,     setActiveTab]     = useState<DataTab>("asset");
-  const [form,          setForm]          = useState<Entry>(emptyEntry("asset", mode));
+  const [form,          setForm]          = useState<Entry>(emptyEntry("asset"));
   const [formOpen,      setFormOpen]      = useState(true);
   const [entries,       setEntries]       = useState<Entry[]>(sampleEntries);
   const [viewMonth,     setViewMonth]     = useState<string>(thisYM);
@@ -415,9 +425,6 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isCurrentMonth = viewMonth === thisYM;
-  const showYield      = mode === "personal" && activeTab === "asset";
-  const showDueAt      = activeTab === "liability";
-  const showBusiness   = mode === "business";
 
   function showToast(msg: string, type = "success") {
     setToast({ msg, type });
@@ -427,7 +434,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
 
   function handleTabChange(tab: DataTab) {
     setActiveTab(tab);
-    setForm(emptyEntry(tab, mode));
+    setForm(emptyEntry(tab));
   }
 
   function handlePrevMonth() {
@@ -452,7 +459,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
     }
     const saved: Entry = { ...form, id: crypto.randomUUID(), tab: activeTab };
     setEntries((prev) => [saved, ...prev]);
-    setForm(emptyEntry(activeTab, mode));
+    setForm(emptyEntry(activeTab));
     const savedMonth = toYM(saved.occurred_at) || thisYM;
     setViewMonth(savedMonth);
     if (savedMonth !== thisYM) setFormOpen(false);
@@ -701,7 +708,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
             {formOpen && (
               <button
                 className="de-btn de-btn-sm de-btn-ghost"
-                onClick={(e) => { e.stopPropagation(); setForm(emptyEntry(activeTab, mode)); }}
+                onClick={(e) => { e.stopPropagation(); setForm(emptyEntry(activeTab)); }}
               >
                 クリア
               </button>
@@ -713,7 +720,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
           <>
             {formFields}
             <div className="de-footer">
-              <button className="de-btn de-btn-ghost" onClick={() => setForm(emptyEntry(activeTab, mode))}>キャンセル</button>
+              <button className="de-btn de-btn-ghost" onClick={() => setForm(emptyEntry(activeTab))}>キャンセル</button>
               <button className="de-btn de-btn-primary" onClick={handleSave}><CheckIcon />保存する</button>
             </div>
           </>

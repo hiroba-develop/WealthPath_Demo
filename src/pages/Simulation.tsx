@@ -211,9 +211,9 @@ function smoothBezier(pts: [number, number][]): string {
 }
 
 // ── Chart ─────────────────────────────────────────────────────────
-const Chart = ({ assetP, assetB, rateA, rateG, monthly, target, delta, oneshotAmt, oneshotUp, oneshotDown }: {
+const Chart = ({ assetP, assetB, rateA, rateG, monthly, target, oneshotAmt, oneshotUp, oneshotDown }: {
   assetP: number; assetB: number; rateA: number; rateG: number;
-  monthly: number; target: number; delta: number;
+  monthly: number; target: number;
   oneshotAmt: number; oneshotUp: number; oneshotDown: number;
 }) => {
   const W = 560; const H = 240;
@@ -665,7 +665,7 @@ const Simulation = ({
                 ))}
               </div>
               <Chart assetP={assetP} assetB={assetB} rateA={a} rateG={g}
-                monthly={monthly} target={target} delta={d}
+                monthly={monthly} target={target}
                 oneshotAmt={osAmt} oneshotUp={osUp} oneshotDown={osDn} />
             </div>
           </div>
