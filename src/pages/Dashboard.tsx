@@ -51,9 +51,13 @@ function formatYM(ym: string): string {
   return `${y}年${parseInt(m)}月`;
 }
 function fmt(n: number): string { return n.toLocaleString("ja-JP"); }
+function fmtShort(n: number): string {
+  if (Math.abs(n) >= 10000) return (n / 10000).toFixed(1) + "億";
+  return fmt(n) + "万";
+}
 function fmtSign(n: number): string { return (n >= 0 ? "+" : "") + fmt(n); }
 
-// ── Entry type (mirrors DataEntry) ───────────────────────────────
+// ── Entry type ───────────────────────────────────────────────────
 type DataTab = "asset" | "liability" | "revenue" | "cost";
 interface Entry {
   id: string; tab: DataTab; business: string; content: string;
@@ -62,60 +66,50 @@ interface Entry {
 function parseAmt(s: string): number { return parseInt(s.replace(/,/g, ""), 10) || 0; }
 function toYM(d: string): string { return d ? d.slice(0, 7) : ""; }
 
-// ── Sample entries (same as DataEntry) ───────────────────────────
+// ── Sample entries ───────────────────────────────────────────────
 const TM  = currentYM();
 const PM  = shiftYM(TM, -1);
 const PM2 = shiftYM(TM, -2);
 
 const ALL_ENTRIES: Entry[] = [
-  // 個人
-  { id:"p01", tab:"asset",     business:"", content:"三菱UFJ定期預金",           occurred_at:`${TM}-05`,  due_at:`${shiftYM(TM,12)}-05`, amount:"500",  yield_rate:"0.2", memo:"" },
-  { id:"p02", tab:"asset",     business:"", content:"SBI証券 S&P500インデックス", occurred_at:`${TM}-10`,  due_at:"",                     amount:"320",  yield_rate:"7.0", memo:"" },
-  { id:"p03", tab:"asset",     business:"", content:"自宅マンション（評価額）",    occurred_at:`${TM}-01`,  due_at:"",                     amount:"4200", yield_rate:"",    memo:"" },
-  { id:"p04", tab:"asset",     business:"", content:"iDeCo 全世界株式",           occurred_at:`${TM}-25`,  due_at:"",                     amount:"280",  yield_rate:"5.5", memo:"" },
-  { id:"p05", tab:"liability", business:"", content:"住宅ローン残高",             occurred_at:`${TM}-01`,  due_at:`${shiftYM(TM,300)}-01`,amount:"2800", yield_rate:"",    memo:"変動金利 0.475%" },
-  { id:"p06", tab:"liability", business:"", content:"カーローン",                 occurred_at:`${TM}-15`,  due_at:`${shiftYM(TM,36)}-15`, amount:"180",  yield_rate:"",    memo:"残り3年" },
-  { id:"p07", tab:"revenue",   business:"", content:"給与（今月）",               occurred_at:`${TM}-25`,  due_at:"",                     amount:"55",   yield_rate:"",    memo:"" },
-  { id:"p08", tab:"revenue",   business:"", content:"副業 Webライティング",        occurred_at:`${TM}-20`,  due_at:"",                     amount:"8",    yield_rate:"",    memo:"" },
-  { id:"p09", tab:"revenue",   business:"", content:"配当収入（国内株）",           occurred_at:`${TM}-28`,  due_at:"",                     amount:"12",   yield_rate:"",    memo:"" },
-  { id:"p10", tab:"cost",      business:"", content:"家賃",                       occurred_at:`${TM}-01`,  due_at:"",                     amount:"12",   yield_rate:"",    memo:"" },
-  { id:"p11", tab:"cost",      business:"", content:"生命保険・医療保険",          occurred_at:`${TM}-05`,  due_at:"",                     amount:"3",    yield_rate:"",    memo:"" },
-  { id:"p12", tab:"asset",     business:"", content:"楽天証券 日本株",             occurred_at:`${PM}-08`,  due_at:"",                     amount:"210",  yield_rate:"3.2", memo:"" },
-  { id:"p13", tab:"liability", business:"", content:"奨学金残高",                 occurred_at:`${PM}-01`,  due_at:`${shiftYM(TM,24)}-01`, amount:"130",  yield_rate:"",    memo:"" },
-  { id:"p14", tab:"revenue",   business:"", content:"給与（先月）",               occurred_at:`${PM}-25`,  due_at:"",                     amount:"55",   yield_rate:"",    memo:"" },
-  { id:"p15", tab:"cost",      business:"", content:"食費・日用品",               occurred_at:`${PM}-31`,  due_at:"",                     amount:"8",    yield_rate:"",    memo:"" },
-  { id:"p16", tab:"cost",      business:"", content:"書籍・学習費",               occurred_at:`${PM}-15`,  due_at:"",                     amount:"2",    yield_rate:"",    memo:"" },
-  { id:"p17", tab:"asset",     business:"", content:"外貨預金（USD）",             occurred_at:`${PM2}-15`, due_at:"",                     amount:"95",   yield_rate:"1.5", memo:"" },
-  { id:"p18", tab:"cost",      business:"", content:"年間保険料（一括）",          occurred_at:`${PM2}-05`, due_at:"",                     amount:"18",   yield_rate:"",    memo:"" },
-  // 事業
-  { id:"b01", tab:"asset",     business:"A事業",           content:"店舗設備一式",          occurred_at:`${TM}-01`,  due_at:"",                      amount:"800",  yield_rate:"", memo:"" },
-  { id:"b02", tab:"asset",     business:"A事業",           content:"運転資金（普通預金）",   occurred_at:`${TM}-01`,  due_at:"",                      amount:"200",  yield_rate:"", memo:"" },
-  { id:"b03", tab:"asset",     business:"Bコンサルティング", content:"業務用PC・機材",        occurred_at:`${TM}-05`,  due_at:"",                      amount:"150",  yield_rate:"", memo:"" },
-  { id:"b04", tab:"liability", business:"A事業",           content:"設備投資ローン",         occurred_at:`${TM}-01`,  due_at:`${shiftYM(TM,60)}-01`,  amount:"600",  yield_rate:"", memo:"金利1.2%" },
-  { id:"b05", tab:"liability", business:"Bコンサルティング", content:"事業用クレジット残高",  occurred_at:`${TM}-15`,  due_at:`${shiftYM(TM,1)}-25`,   amount:"45",   yield_rate:"", memo:"" },
-  { id:"b06", tab:"revenue",   business:"A事業",           content:"店舗売上（今月）",       occurred_at:`${TM}-30`,  due_at:"",                      amount:"320",  yield_rate:"", memo:"" },
-  { id:"b07", tab:"revenue",   business:"Bコンサルティング", content:"C社 月次顧問料",        occurred_at:`${TM}-20`,  due_at:"",                      amount:"50",   yield_rate:"", memo:"" },
-  { id:"b08", tab:"revenue",   business:"Bコンサルティング", content:"D社 プロジェクト費用",  occurred_at:`${TM}-25`,  due_at:"",                      amount:"120",  yield_rate:"", memo:"" },
-  { id:"b09", tab:"cost",      business:"A事業",           content:"食材・仕入原価",         occurred_at:`${TM}-30`,  due_at:"",                      amount:"95",   yield_rate:"", memo:"" },
-  { id:"b10", tab:"cost",      business:"A事業",           content:"人件費（パート2名）",    occurred_at:`${TM}-25`,  due_at:"",                      amount:"48",   yield_rate:"", memo:"" },
-  { id:"b11", tab:"cost",      business:"Bコンサルティング", content:"外注費（デザイン）",    occurred_at:`${TM}-18`,  due_at:"",                      amount:"30",   yield_rate:"", memo:"" },
-  { id:"b12", tab:"revenue",   business:"A事業",           content:"店舗売上（先月）",       occurred_at:`${PM}-31`,  due_at:"",                      amount:"296",  yield_rate:"", memo:"" },
-  { id:"b13", tab:"revenue",   business:"Bコンサルティング", content:"C社 月次顧問料",        occurred_at:`${PM}-20`,  due_at:"",                      amount:"50",   yield_rate:"", memo:"" },
-  { id:"b14", tab:"cost",      business:"A事業",           content:"食材・仕入原価",         occurred_at:`${PM}-31`,  due_at:"",                      amount:"88",   yield_rate:"", memo:"" },
-  { id:"b15", tab:"cost",      business:"Bコンサルティング", content:"SaaS各種サブスク",      occurred_at:`${PM}-01`,  due_at:"",                      amount:"4",    yield_rate:"", memo:"" },
+  // 個人 今月 — 資産430万・負債130万 → 純資産300万
+  { id:"p01", tab:"asset",     business:"", content:"楽天銀行 普通預金",            occurred_at:`${TM}-05`,  due_at:"",                     amount:"180", yield_rate:"0.1", memo:"" },
+  { id:"p02", tab:"asset",     business:"", content:"SBI証券 S&P500インデックス",    occurred_at:`${TM}-10`,  due_at:"",                     amount:"95",  yield_rate:"7.0", memo:"" },
+  { id:"p03", tab:"asset",     business:"", content:"iDeCo 全世界株式",              occurred_at:`${TM}-25`,  due_at:"",                     amount:"55",  yield_rate:"5.5", memo:"" },
+  { id:"p04", tab:"asset",     business:"", content:"外貨預金（USD）",               occurred_at:`${TM}-15`,  due_at:"",                     amount:"30",  yield_rate:"1.5", memo:"" },
+  { id:"p05", tab:"liability", business:"", content:"奨学金残高",                    occurred_at:`${TM}-01`,  due_at:`${shiftYM(TM,48)}-01`, amount:"90",  yield_rate:"",    memo:"毎月返済中" },
+  { id:"p06", tab:"liability", business:"", content:"カーローン",                    occurred_at:`${TM}-15`,  due_at:`${shiftYM(TM,30)}-15`, amount:"40",  yield_rate:"",    memo:"残り2.5年" },
+  { id:"p07", tab:"revenue",   business:"", content:"給与（今月）",                  occurred_at:`${TM}-25`,  due_at:"",                     amount:"28",  yield_rate:"",    memo:"" },
+  { id:"p08", tab:"revenue",   business:"", content:"副業 Webライティング",           occurred_at:`${TM}-20`,  due_at:"",                     amount:"4",   yield_rate:"",    memo:"" },
+  { id:"p09", tab:"cost",      business:"", content:"家賃",                          occurred_at:`${TM}-01`,  due_at:"",                     amount:"7",   yield_rate:"",    memo:"" },
+  { id:"p10", tab:"cost",      business:"", content:"生命保険・医療保険",             occurred_at:`${TM}-05`,  due_at:"",                     amount:"2",   yield_rate:"",    memo:"" },
+  // 個人 先月
+  { id:"p11", tab:"asset",     business:"", content:"楽天銀行 普通預金",             occurred_at:`${PM}-05`,  due_at:"",                     amount:"168", yield_rate:"0.1", memo:"" },
+  { id:"p12", tab:"asset",     business:"", content:"SBI証券 S&P500インデックス",    occurred_at:`${PM}-10`,  due_at:"",                     amount:"90",  yield_rate:"7.0", memo:"" },
+  { id:"p13", tab:"asset",     business:"", content:"iDeCo 全世界株式",              occurred_at:`${PM}-25`,  due_at:"",                     amount:"52",  yield_rate:"5.5", memo:"" },
+  { id:"p14", tab:"liability", business:"", content:"奨学金残高",                    occurred_at:`${PM}-01`,  due_at:`${shiftYM(TM,48)}-01`, amount:"92",  yield_rate:"",    memo:"" },
+  { id:"p15", tab:"liability", business:"", content:"カーローン",                    occurred_at:`${PM}-15`,  due_at:`${shiftYM(TM,30)}-15`, amount:"41",  yield_rate:"",    memo:"" },
+  { id:"p16", tab:"revenue",   business:"", content:"給与（先月）",                  occurred_at:`${PM}-25`,  due_at:"",                     amount:"28",  yield_rate:"",    memo:"" },
+  { id:"p17", tab:"cost",      business:"", content:"家賃",                          occurred_at:`${PM}-01`,  due_at:"",                     amount:"7",   yield_rate:"",    memo:"" },
+  { id:"p18", tab:"cost",      business:"", content:"食費・日用品",                  occurred_at:`${PM}-31`,  due_at:"",                     amount:"5",   yield_rate:"",    memo:"" },
+  // 個人 2ヶ月前
+  { id:"p19", tab:"cost",      business:"", content:"年間保険料（一括）",             occurred_at:`${PM2}-05`, due_at:"",                     amount:"8",   yield_rate:"",    memo:"" },
+  // 事業 今月 — 資産80万・負債50万 → 純資産30万
+  { id:"b01", tab:"asset",     business:"A事業",            content:"運転資金（普通預金）", occurred_at:`${TM}-01`,  due_at:"",                     amount:"50",  yield_rate:"", memo:"" },
+  { id:"b02", tab:"asset",     business:"Bコンサルティング", content:"業務用PC・機材",      occurred_at:`${TM}-05`,  due_at:"",                     amount:"30",  yield_rate:"", memo:"" },
+  { id:"b03", tab:"liability", business:"A事業",            content:"開業準備ローン",       occurred_at:`${TM}-01`,  due_at:`${shiftYM(TM,36)}-01`, amount:"45",  yield_rate:"", memo:"金利1.5%" },
+  { id:"b04", tab:"liability", business:"Bコンサルティング", content:"事業用クレジット残高", occurred_at:`${TM}-15`,  due_at:`${shiftYM(TM,1)}-25`,  amount:"5",   yield_rate:"", memo:"" },
+  { id:"b05", tab:"revenue",   business:"A事業",            content:"店舗売上（今月）",     occurred_at:`${TM}-30`,  due_at:"",                     amount:"18",  yield_rate:"", memo:"初月" },
+  { id:"b06", tab:"revenue",   business:"Bコンサルティング", content:"C社 初回顧問料",       occurred_at:`${TM}-20`,  due_at:"",                     amount:"10",  yield_rate:"", memo:"" },
+  { id:"b07", tab:"cost",      business:"A事業",            content:"仕入原価",             occurred_at:`${TM}-30`,  due_at:"",                     amount:"8",   yield_rate:"", memo:"" },
+  { id:"b08", tab:"cost",      business:"A事業",            content:"家賃（店舗）",         occurred_at:`${TM}-01`,  due_at:"",                     amount:"6",   yield_rate:"", memo:"" },
+  { id:"b09", tab:"cost",      business:"Bコンサルティング", content:"SaaS各種サブスク",     occurred_at:`${TM}-01`,  due_at:"",                     amount:"2",   yield_rate:"", memo:"" },
+  // 事業 先月（開業準備中）
+  { id:"b10", tab:"revenue",   business:"A事業",            content:"店舗売上（先月）",     occurred_at:`${PM}-31`,  due_at:"",                     amount:"8",   yield_rate:"", memo:"プレオープン" },
+  { id:"b11", tab:"cost",      business:"A事業",            content:"開業準備費用",         occurred_at:`${PM}-15`,  due_at:"",                     amount:"12",  yield_rate:"", memo:"内装・備品" },
 ];
 
-{/*
 // ── Compute summary figures ───────────────────────────────────────
-function sumTab(tab: DataTab, ym?: string): number {
-  return ALL_ENTRIES
-    .filter(e => e.tab === tab && (ym ? toYM(e.occurred_at) === ym : true))
-    .reduce((s, e) => s + parseAmt(e.amount), 0);
-}
-function countTab(tab: DataTab, ym: string): number {
-  return ALL_ENTRIES.filter(e => e.tab === tab && toYM(e.occurred_at) === ym).length;
-}
-*/}
 const pAsset   = ALL_ENTRIES.filter(e => e.tab==="asset"     && e.business==="" ).reduce((s,e)=>s+parseAmt(e.amount),0);
 const pLiab    = ALL_ENTRIES.filter(e => e.tab==="liability"  && e.business==="" ).reduce((s,e)=>s+parseAmt(e.amount),0);
 const pRevTM   = ALL_ENTRIES.filter(e => e.tab==="revenue"    && e.business==="" && toYM(e.occurred_at)===TM).reduce((s,e)=>s+parseAmt(e.amount),0);
@@ -150,7 +144,6 @@ function computeAlerts(): Alert[] {
   const result: Alert[] = [];
   const nextMonthEnd = `${shiftYM(TM, 1)}-31`;
 
-  // #1 返済期日が今月以内（danger）
   ALL_ENTRIES
     .filter(e => e.tab === "liability" && e.due_at && e.due_at <= `${TM}-31`)
     .forEach(e => {
@@ -162,16 +155,13 @@ function computeAlerts(): Alert[] {
       });
     });
 
-  // #2 純資産マイナス（debt超過）- 個人・事業・統合それぞれ
   if (cNet < 0) result.push({ level: "danger", message: "純資産合計がマイナスです（債務超過）", detail: `純資産: ¥${fmt(cNet)}万` });
   if (pNet < 0) result.push({ level: "danger", message: "個人の純資産がマイナスです", detail: `資産 ¥${fmt(pAsset)}万 ／ 負債 ¥${fmt(pLiab)}万` });
   if (bNet < 0) result.push({ level: "danger", message: "事業の純資産がマイナスです", detail: `資産 ¥${fmt(bAsset)}万 ／ 負債 ¥${fmt(bLiab)}万` });
 
-  // #3 今月収支マイナス
   if (pProfit < 0) result.push({ level: "danger", message: "個人の今月収支がマイナスです", detail: `収入 ¥${fmt(pRevTM)}万 ／ 支出 ¥${fmt(pCostTM)}万` });
   if (bProfit < 0) result.push({ level: "danger", message: "事業の今月収支がマイナスです", detail: `売上 ¥${fmt(bRevTM)}万 ／ コスト ¥${fmt(bCostTM)}万` });
 
-  // #4 返済期日が翌月以内（warning）
   ALL_ENTRIES
     .filter(e => e.tab === "liability" && e.due_at && e.due_at > `${TM}-31` && e.due_at <= nextMonthEnd)
     .forEach(e => {
@@ -182,7 +172,6 @@ function computeAlerts(): Alert[] {
       });
     });
 
-  // #5 負債比率が資産の80%超（warning）
   if (pAsset > 0 && pLiab / pAsset >= 0.8) result.push({
     level: "warning",
     message: "個人の負債が資産の80%を超えています",
@@ -194,7 +183,6 @@ function computeAlerts(): Alert[] {
     detail: `負債比率: ${Math.round((bLiab/bAsset)*100)}% ／ 資産 ¥${fmt(bAsset)}万 負債 ¥${fmt(bLiab)}万`,
   });
 
-  // #6 今月データが0件のカテゴリ（warning）
   const tabs: { tab: DataTab; label: string }[] = [
     { tab: "asset", label: "資産" }, { tab: "liability", label: "負債" },
     { tab: "revenue", label: "売上・収入" }, { tab: "cost", label: "支出・コスト" },
@@ -208,14 +196,12 @@ function computeAlerts(): Alert[] {
     });
   });
 
-  // #7 前月比収入20%以上減（warning）
   if (prevCRev > 0 && cRev < prevCRev * 0.8) result.push({
     level: "warning",
     message: "今月の収入が先月より20%以上減少しています",
     detail: `今月 ¥${fmt(cRev)}万 ／ 先月 ¥${fmt(prevCRev)}万（${fmtSign(revGrowth)}%）`,
   });
 
-  // #8 利回り未設定の個人資産（info）
   const noYield = ALL_ENTRIES.filter(e => e.tab === "asset" && e.business === "" && !e.yield_rate && toYM(e.occurred_at) === TM);
   if (noYield.length > 0) result.push({
     level: "info",
@@ -227,6 +213,57 @@ function computeAlerts(): Alert[] {
 }
 
 const ALERTS = computeAlerts();
+
+// ── Monthly trend data ────────────────────────────────────────────
+// 2025年3月サービス開始。個人300万・事業0万スタート。
+const SVC_START = "2026-03";
+function buildMonthRange(from: string, to: string): string[] {
+  const months: string[] = [];
+  let cur = from;
+  while (cur <= to) { months.push(cur); cur = shiftYM(cur, 1); }
+  return months;
+}
+const CHART_MONTHS = buildMonthRange(SVC_START, TM);
+
+// 各月の pNet・bNet サンプル値（3月〜、末尾がTMの実値で上書き）
+const CHART_PRESET: { pNet: number; bNet: number }[] = [
+  { pNet: 300, bNet:  30 },  // 3月
+  { pNet: 298, bNet:  28 },  // 4月
+  { pNet: 297, bNet:  25 },  // 5月
+  { pNet: 299, bNet:  26 },  // 6月
+  { pNet: 302, bNet:  28 },  // 7月
+  { pNet: 305, bNet:  30 },  // 8月
+  { pNet: 308, bNet:  32 },  // 9月
+  { pNet: 310, bNet:  33 },  // 10月
+  { pNet: 312, bNet:  32 },  // 11月
+  { pNet: 315, bNet:  31 },  // 12月
+  { pNet: 317, bNet:  30 },  // 1月
+  { pNet: 319, bNet:  31 },  // 2月
+];
+
+const MONTHLY_DATA = CHART_MONTHS.map((ym, i) => {
+  const isTM = ym === TM;
+  const preset = CHART_PRESET[i] ?? CHART_PRESET[CHART_PRESET.length - 1];
+  const p = isTM ? pNet : preset.pNet;
+  const b = isTM ? bNet : preset.bNet;
+  return { ym, pNet: p, bNet: b, cNet: p + b };
+});
+
+function toYearlyData(monthly: typeof MONTHLY_DATA) {
+  const map = new Map<string, { ym: string; pNet: number; bNet: number; cNet: number; _n: number }>();
+  monthly.forEach(d => {
+    const y = d.ym.slice(0, 4);
+    const cur = map.get(y) ?? { ym: y, pNet: 0, bNet: 0, cNet: 0, _n: 0 };
+    cur.pNet += d.pNet; cur.bNet += d.bNet; cur.cNet += d.cNet; cur._n++;
+    map.set(y, cur);
+  });
+  return Array.from(map.values()).map(d => ({
+    ym: d.ym,
+    pNet: Math.round(d.pNet / d._n),
+    bNet: Math.round(d.bNet / d._n),
+    cNet: Math.round(d.cNet / d._n),
+  }));
+}
 
 // ── Styles ───────────────────────────────────────────────────────
 const css = `
@@ -288,51 +325,37 @@ const css = `
     border-radius: ${tokens.radius}; overflow: hidden;
     position: relative;
   }
-
-  /* 個人: teal */
   .db-col.personal { border-color: #9FE1CB; }
   .db-col.personal .db-col-hdr { background: ${tokens.tealLight}; border-bottom-color: #9FE1CB; }
   .db-col.personal .db-col-mode { color: #0F6E56; }
   .db-col.personal .db-col-stripe { background: ${tokens.teal}; }
-
-  /* 事業: blue/primary */
   .db-col.business { border-color: #B5D4F4; }
   .db-col.business .db-col-hdr { background: ${tokens.primaryLight}; border-bottom-color: #B5D4F4; }
   .db-col.business .db-col-mode { color: #185FA5; }
   .db-col.business .db-col-stripe { background: ${tokens.primary}; }
-
-  /* 統合: amber */
   .db-col.combined { border-color: #FAC775; }
   .db-col.combined .db-col-hdr { background: #FAEEDA; border-bottom-color: #FAC775; }
   .db-col.combined .db-col-mode { color: #633806; }
   .db-col.combined .db-col-stripe { background: #EF9F27; }
 
-  /* 左上カラーバー */
   .db-col-stripe {
     position: absolute; top: 0; left: 0; bottom: 0;
     width: 4px; border-radius: 12px 0 0 12px;
   }
-
-  .db-col-hdr {
-    padding: 14px 18px 12px 22px;
-    border-bottom: 1px solid ${tokens.border};
-  }
+  .db-col-hdr { padding: 14px 18px 12px 22px; border-bottom: 1px solid ${tokens.border}; }
   .db-col-mode { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; margin-bottom: 4px; }
   .db-col-net  { font-size: 26px; font-weight: 700; letter-spacing: -0.8px; }
   .db-col-net-label { font-size: 11px; color: ${tokens.textSecondary}; margin-top: 1px; }
-
   .db-rows { padding: 4px 0; }
   .db-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 9px 18px 9px 22px;
-    border-bottom: 1px solid ${tokens.border};
+    padding: 9px 18px 9px 22px; border-bottom: 1px solid ${tokens.border};
   }
   .db-row:last-child { border-bottom: none; }
   .db-row-left { display: flex; align-items: center; gap: 8px; }
   .db-row-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .db-row-label { font-size: 13px; color: ${tokens.textSecondary}; }
   .db-row-value { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
-
   .db-row-profit {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 18px 10px 22px; background: ${tokens.bg};
@@ -341,7 +364,6 @@ const css = `
   .db-row-profit-label { font-size: 12px; font-weight: 500; color: ${tokens.textSecondary}; }
   .db-row-profit-value { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
 
-  /* progress */
   .db-progress { padding: 12px 18px 12px 22px; border-top: 1px solid ${tokens.border}; }
   .db-progress-meta { display: flex; justify-content: space-between; margin-bottom: 5px; }
   .db-progress-meta-label { font-size: 11px; color: ${tokens.textMuted}; }
@@ -353,10 +375,51 @@ const css = `
   .db-forecast-value { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; color: #BA7517; }
   .db-forecast-unit  { font-size: 11px; font-weight: 400; margin-left: 3px; color: ${tokens.textSecondary}; }
 
+  /* ── Net Worth Chart ── */
+  .nw-panel {
+    background: ${tokens.surface}; border: 1px solid ${tokens.border};
+    border-radius: ${tokens.radius}; overflow: hidden; margin-top: 20px;
+  }
+  .nw-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid ${tokens.border};
+    flex-wrap: wrap; gap: 8px;
+  }
+  .nw-hdr-left { display: flex; align-items: center; gap: 14px; }
+  .nw-title { font-size: 13px; font-weight: 600; }
+  .nw-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .nw-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: ${tokens.textSecondary}; }
+  .nw-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .nw-legend-dash { width: 18px; height: 0; border-top: 2px dashed; flex-shrink: 0; }
+
+  .nw-metrics { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid ${tokens.border}; }
+  .nw-metric { padding: 12px 18px; border-right: 1px solid ${tokens.border}; }
+  .nw-metric:last-child { border-right: none; }
+  .nw-metric-label { font-size: 11px; color: ${tokens.textMuted}; margin-bottom: 3px; }
+  .nw-metric-value { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+  .nw-metric-delta { font-size: 11px; margin-top: 2px; }
+
+  .nw-tabs { display: flex; gap: 4px; flex-shrink: 0; }
+  .nw-tab {
+    padding: 4px 12px; font-size: 11px; font-weight: 500; border-radius: 6px;
+    border: 1px solid ${tokens.border}; background: none;
+    color: ${tokens.textMuted}; cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    transition: background 0.12s, color 0.12s;
+  }
+  .nw-tab.active {
+    background: ${tokens.primaryLight}; color: ${tokens.primary};
+    border-color: ${tokens.borderMid};
+  }
+
+  .nw-body { padding: 14px 16px; }
+
   /* ── Responsive ── */
   @media (max-width: 900px) {
     .db-top  { grid-template-columns: repeat(3, 1fr); }
     .db-grid { grid-template-columns: 1fr; }
+    .nw-metrics { grid-template-columns: 1fr; }
+    .nw-metric { border-right: none; border-bottom: 1px solid ${tokens.border}; }
+    .nw-metric:last-child { border-bottom: none; }
   }
   @media (max-width: 540px) {
     .db-top { grid-template-columns: repeat(2, 1fr); }
@@ -371,8 +434,128 @@ const ChevronDown = () => (
   </svg>
 );
 
-// ── Simulation forecast chart (embedded in Dashboard) ────────────
+// ── Net Worth Chart (SVG) ────────────────────────────────────────
+type ChartDataPoint = { ym: string; pNet: number; bNet: number; cNet: number };
+type TrendUnit = "monthly" | "yearly";
 
+function smoothBez(pts: [number,number][]): string {
+  if (pts.length < 2) return "";
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i-1]; const [x1, y1] = pts[i];
+    const cx = (x0+x1)/2;
+    d += ` C${cx.toFixed(1)},${y0.toFixed(1)} ${cx.toFixed(1)},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
+  }
+  return d;
+}
+
+const NetWorthChart = ({ data, unit }: { data: ChartDataPoint[]; unit: TrendUnit }) => {
+  const W = 620; const H = 200;
+  const PL = 60; const PR = 72; const PT = 12; const PB = 26;
+  const cW = W-PL-PR; const cH = H-PT-PB;
+
+  const series = [
+    { key: "cNet" as const, color: "#EF9F27", label: "統合", w: 2.5, dash: "0" },
+    { key: "pNet" as const, color: "#1D9E75", label: "個人", w: 2,   dash: "0" },
+    { key: "bNet" as const, color: "#378ADD", label: "事業", w: 2,   dash: "5,3" },
+  ];
+
+  const allVals = data.flatMap(d => [d.pNet, d.bNet, d.cNet]);
+  const maxV = Math.max(...allVals) * 1.15 || 1;
+  const minV = Math.min(0, Math.min(...allVals));
+  const range = maxV - minV;
+
+  const xPos = (i: number) => data.length <= 1 ? PL + cW / 2 : PL + (i / (data.length-1)) * cW;
+  const yPos = (v: number) => PT + cH - ((v-minV)/range)*cH;
+
+  const ticks = Array.from({length: 5}, (_,i) => minV + (range/4)*i);
+
+  const xLabels = data.map((d,i) => {
+    if (unit === "yearly") return { i, label: `${d.ym.slice(0,4)}年` };
+    if (i % 3 === 0 || i === data.length-1) return { i, label: `${parseInt(d.ym.split("-")[1])}月` };
+    return null;
+  }).filter(Boolean) as { i: number; label: string }[];
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>
+      <defs>
+        {series.map(s => (
+          <linearGradient key={s.key} id={`nw-grad-${s.key}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={s.color} stopOpacity="0.12" />
+            <stop offset="100%" stopColor={s.color} stopOpacity="0" />
+          </linearGradient>
+        ))}
+      </defs>
+
+      {/* grid */}
+      {ticks.map((v,ti) => {
+        const yv = yPos(v);
+        const lbl = v === 0 ? "0" : Math.abs(v) >= 10000 ? `${(v/10000).toFixed(1)}億` : `${Math.round(v)}万`;
+        return (
+          <g key={ti}>
+            <line x1={PL} y1={yv} x2={W-PR} y2={yv}
+              stroke={tokens.border} strokeWidth="1" strokeDasharray="4,4" />
+            <text x={PL-6} y={yv+3.5} textAnchor="end" fontSize="8" fill={tokens.textMuted}
+              fontFamily="'Noto Sans JP',sans-serif">{lbl}</text>
+          </g>
+        );
+      })}
+
+      {/* x labels */}
+      {xLabels.map(({ i, label }) => (
+        <text key={i} x={xPos(i)} y={H-PB+12} textAnchor="middle"
+          fontSize="8" fill={tokens.textMuted} fontFamily="'Noto Sans JP',sans-serif">{label}</text>
+      ))}
+
+      {/* area + line per series */}
+      {series.map(s => {
+        const pts: [number,number][] = data.map((d,i) => [xPos(i), yPos(d[s.key])]);
+        const linePath = smoothBez(pts);
+        const bottom = yPos(Math.max(minV, 0));
+        const areaPath = pts.length > 1
+          ? linePath
+            + ` L${pts[pts.length-1][0].toFixed(1)},${bottom.toFixed(1)}`
+            + ` L${pts[0][0].toFixed(1)},${bottom.toFixed(1)} Z`
+          : "";
+        return (
+          <g key={s.key}>
+            {areaPath && <path d={areaPath} fill={`url(#nw-grad-${s.key})`} stroke="none" />}
+            {pts.length > 1 && (
+              <path d={linePath} fill="none" stroke={s.color}
+                strokeWidth={s.w} strokeDasharray={s.dash}
+                strokeLinecap="round" strokeLinejoin="round" />
+            )}
+            {/* dots */}
+            {pts.map(([cx,cy], i) => (
+              <circle key={i} cx={cx} cy={cy}
+                r={i === pts.length-1 ? 4.5 : 2.5}
+                fill={i === pts.length-1 ? s.color : tokens.surface}
+                stroke={s.color} strokeWidth="1.5" />
+            ))}
+          </g>
+        );
+      })}
+
+      {/* latest value labels — PR領域内に右揃えで表示 */}
+      {series.map((s, si) => {
+        const last = data[data.length-1];
+        const cx = xPos(data.length-1);
+        const cy = yPos(last[s.key]);
+        // 3系列を縦にずらして重なりを防ぐ（間隔13px）
+        const offsetY = (si - 1) * 13;
+        return (
+          <text key={`lbl-${s.key}`}
+            x={cx + 8} y={cy + offsetY + 4}
+            fontSize="8" fill={s.color} fontFamily="'Noto Sans JP',sans-serif" fontWeight="600">
+            {fmtShort(last[s.key])}
+          </text>
+        );
+      })}
+    </svg>
+  );
+};
+
+// ── Simulation Forecast Chart ────────────────────────────────────
 function smoothPath(pts: [number, number][]): string {
   if (pts.length < 2) return "";
   let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
@@ -388,15 +571,14 @@ function smoothPath(pts: [number, number][]): string {
 const SimForecastChart = ({ currentNet, personalNet, businessNet, target }: {
   currentNet: number; personalNet: number; businessNet: number; target: number;
 }) => {
-  const W = 660; const H = 240;
-  const PL = 64; const PR = 20; const PT = 16; const PB = 32;
+  const W = 660; const H = 200;
+  const PL = 60; const PR = 20; const PT = 12; const PB = 26;
   const cW = W - PL - PR; const cH = H - PT - PB;
 
-  // シミュレーション初期値に合わせた3シナリオ（Δ=3%）
   const scenarios = [
-    { key: "low",  aR: Math.max(SIM_RATE_A - 0.03, 0), gR: Math.max(SIM_RATE_G - 0.03, 0), color: tokens.teal,    label: `低成長（${((SIM_RATE_A-0.03)*100).toFixed(0)}%）`, w: 2 },
-    { key: "mid",  aR: SIM_RATE_A,                       gR: SIM_RATE_G,                      color: tokens.primary, label: `平均（${(SIM_RATE_A*100).toFixed(0)}%）`,           w: 2.5 },
-    { key: "high", aR: SIM_RATE_A + 0.03,                gR: SIM_RATE_G + 0.03,               color: tokens.purple,  label: `高成長（${((SIM_RATE_A+0.03)*100).toFixed(0)}%）`,  w: 2 },
+    { key: "low",  aR: Math.max(SIM_RATE_A - 0.03, 0), gR: Math.max(SIM_RATE_G - 0.03, 0), color: tokens.teal,    w: 2 },
+    { key: "mid",  aR: SIM_RATE_A,                       gR: SIM_RATE_G,                      color: tokens.primary, w: 2.5 },
+    { key: "high", aR: SIM_RATE_A + 0.03,                gR: SIM_RATE_G + 0.03,               color: tokens.purple,  w: 2 },
   ];
 
   const allV: number[] = [0, target];
@@ -432,7 +614,6 @@ const SimForecastChart = ({ currentNet, personalNet, businessNet, target }: {
         ))}
       </defs>
 
-      {/* grid lines */}
       {ticks.map(v => {
         const yv = yPos(v);
         const label = v === 0 ? "0" : v >= 10000 ? `${(v/10000).toFixed(1)}億` : `${Math.round(v/100)*100}万`;
@@ -440,21 +621,19 @@ const SimForecastChart = ({ currentNet, personalNet, businessNet, target }: {
           <g key={v}>
             <line x1={PL} y1={yv} x2={W - PR} y2={yv}
               stroke={tokens.border} strokeWidth="1" strokeDasharray="4,4" />
-            <text x={PL - 8} y={yv + 4} textAnchor="end" fontSize="8" fill={tokens.textMuted}
+            <text x={PL - 6} y={yv + 3.5} textAnchor="end" fontSize="8" fill={tokens.textMuted}
               fontFamily="'Noto Sans JP', sans-serif">{label}</text>
           </g>
         );
       })}
 
-      {/* x-axis labels */}
       {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(y => (
-        <text key={y} x={xPos(y)} y={H - PB + 16} textAnchor="middle"
+        <text key={y} x={xPos(y)} y={H - PB + 13} textAnchor="middle"
           fontSize="8" fill={tokens.textMuted} fontFamily="'Noto Sans JP', sans-serif">
           {y === 0 ? "0年" : `${y}年`}
         </text>
       ))}
 
-      {/* area fills */}
       {resolvedPaths.map(sc => {
         const bottom = yPos(0);
         const areaD = smoothPath(sc.coords)
@@ -466,20 +645,18 @@ const SimForecastChart = ({ currentNet, personalNet, businessNet, target }: {
         );
       })}
 
-      {/* target line */}
       {(() => {
         const ty = yPos(target);
         return (
           <>
             <line x1={PL} y1={ty} x2={W - PR} y2={ty}
               stroke={tokens.danger} strokeWidth="1.2" strokeDasharray="6,4" opacity="0.6" />
-            <text x={W - PR + 2} y={ty + 4} fontSize="10" fill={tokens.danger}
+            <text x={W - PR - 4} y={ty - 5} textAnchor="end" fontSize="10" fill={tokens.danger}
               fontFamily="'Noto Sans JP', sans-serif" fontWeight="500">目標</text>
           </>
         );
       })()}
 
-      {/* lines */}
       {resolvedPaths.map(sc => (
         <path key={`line-${sc.key}`} d={smoothPath(sc.coords)}
           fill="none" stroke={sc.color} strokeWidth={sc.w}
@@ -487,156 +664,17 @@ const SimForecastChart = ({ currentNet, personalNet, businessNet, target }: {
           opacity={sc.key === "mid" ? 1 : 0.85} />
       ))}
 
-      {/* dots on each data point for mid line */}
       {resolvedPaths.find(s => s.key === "mid")?.coords.map(([cx, cy], i) => (
         <circle key={i} cx={cx} cy={cy} r={i === 0 ? 5 : 3}
           fill={i === 0 ? tokens.primary : tokens.surface}
           stroke={tokens.primary} strokeWidth="1.5" />
       ))}
 
-      {/* current label */}
       <text x={xPos(0) + 8} y={yPos(currentNet) - 8} fontSize="10"
         fill={tokens.primary} fontFamily="'Noto Sans JP', sans-serif" fontWeight="600">現在</text>
     </svg>
   );
 };
-
-// ── Monthly trend sample data (12 months) ────────────────────────
-const MONTHLY_DATA: { ym: string; asset: number; liability: number; revenue: number; cost: number }[] = [
-  { ym: shiftYM(TM,-11), asset:4200, liability:3200, revenue:55,  cost:18 },
-  { ym: shiftYM(TM,-10), asset:4280, liability:3180, revenue:58,  cost:20 },
-  { ym: shiftYM(TM,-9),  asset:4350, liability:3160, revenue:62,  cost:17 },
-  { ym: shiftYM(TM,-8),  asset:4420, liability:3140, revenue:60,  cost:22 },
-  { ym: shiftYM(TM,-7),  asset:4500, liability:3120, revenue:65,  cost:19 },
-  { ym: shiftYM(TM,-6),  asset:4600, liability:3100, revenue:68,  cost:21 },
-  { ym: shiftYM(TM,-5),  asset:4750, liability:3090, revenue:70,  cost:20 },
-  { ym: shiftYM(TM,-4),  asset:4900, liability:3080, revenue:72,  cost:23 },
-  { ym: shiftYM(TM,-3),  asset:5050, liability:3070, revenue:69,  cost:18 },
-  { ym: shiftYM(TM,-2),  asset:5200, liability:3060, revenue:75,  cost:28 },
-  { ym: PM,              asset:5400, liability:3050, revenue:401, cost:102 },
-  { ym: TM,              asset:Math.round(cAsset), liability:Math.round(cLiab), revenue:Math.round(cRev), cost:Math.round(cCost) },
-];
-
-type TrendUnit = "monthly" | "yearly";
-
-function toYearlyData(monthly: typeof MONTHLY_DATA) {
-  const map = new Map<string, typeof MONTHLY_DATA[0]>();
-  monthly.forEach(d => {
-    const y = d.ym.slice(0, 4);
-    const cur = map.get(y);
-    map.set(y, {
-      ym: y,
-      asset:     Math.max(cur?.asset ?? 0, d.asset),
-      liability: Math.max(cur?.liability ?? 0, d.liability),
-      revenue:   (cur?.revenue ?? 0) + d.revenue,
-      cost:      (cur?.cost ?? 0) + d.cost,
-    });
-  });
-  return Array.from(map.values());
-}
-
-// 汎用SVGグラフ（複数ライン対応）
-function MultiLineChart({ data, lines, unit, H = 180 }: {
-  data: typeof MONTHLY_DATA;
-  lines: { key: keyof typeof MONTHLY_DATA[0]; label: string; color: string }[];
-  unit: TrendUnit;
-  H?: number;
-}) {
-  const W = 640; const PL = 58; const PR = 18; const PT = 12; const PB = 28;
-  const cW = W - PL - PR; const cH = H - PT - PB;
-
-  const allVals = data.flatMap(d => lines.map(l => d[l.key] as number));
-  const minV = Math.min(...allVals);
-  const maxV = Math.max(...allVals) * 1.15 || 1;
-  const hasNeg = minV < 0;
-  const yMin = hasNeg ? minV * 1.2 : 0;
-  const yRange = maxV - yMin;
-
-  const xPos = (i: number) => PL + (i / (data.length - 1)) * cW;
-  const yPos = (v: number) => PT + cH - ((v - yMin) / yRange) * cH;
-
-  function smoothBez(pts: [number, number][]): string {
-    if (pts.length < 2) return "";
-    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
-    for (let i = 1; i < pts.length; i++) {
-      const [x0, y0] = pts[i - 1]; const [x1, y1] = pts[i];
-      const cpx = (x0 + x1) / 2;
-      d += ` C${cpx.toFixed(1)},${y0.toFixed(1)} ${cpx.toFixed(1)},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
-    }
-    return d;
-  }
-
-  const tickVals = Array.from({ length: 5 }, (_, i) => yMin + (yRange / 4) * i);
-  const xLabels = data.map((d, i) => {
-    if (unit === "yearly") return { i, label: `${d.ym}年` };
-    if (i % 3 === 0 || i === data.length - 1) {
-      const m = d.ym.split("-")[1];
-      return { i, label: `${parseInt(m)}月` };
-    }
-    return null;
-  }).filter(Boolean) as { i: number; label: string }[];
-
-  //const zero = hasNeg ? yPos(0) : null;
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>
-      <defs>
-        {lines.map(l => (
-          <linearGradient key={l.key} id={`mg-${String(l.key)}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={l.color} stopOpacity="0.15" />
-            <stop offset="100%" stopColor={l.color} stopOpacity="0.01" />
-          </linearGradient>
-        ))}
-      </defs>
-
-      {/* grid */}
-      {tickVals.map((v, ti) => {
-        const yv = yPos(v);
-        const lbl = v === 0 ? "0" : Math.abs(v) >= 10000
-          ? `${(v / 10000).toFixed(1)}億`
-          : `${Math.round(v)}万`;
-        return (
-          <g key={ti}>
-            <line x1={PL} y1={yv} x2={W - PR} y2={yv}
-              stroke={v === 0 && hasNeg ? tokens.borderMid : tokens.border}
-              strokeWidth={v === 0 && hasNeg ? 1.5 : 1} strokeDasharray="4,4" />
-            <text x={PL - 6} y={yv + 3.5} textAnchor="end" fontSize="8"
-              fill={tokens.textMuted} fontFamily="'Noto Sans JP',sans-serif">{lbl}</text>
-          </g>
-        );
-      })}
-
-      {/* x labels */}
-      {xLabels.map(({ i, label }) => (
-        <text key={i} x={xPos(i)} y={H - PB + 14} textAnchor="middle"
-          fontSize="8" fill={tokens.textMuted} fontFamily="'Noto Sans JP',sans-serif">{label}</text>
-      ))}
-
-      {/* area + line per series */}
-      {lines.map(l => {
-        const coords: [number, number][] = data.map((d, i) => [xPos(i), yPos(d[l.key] as number)]);
-        const linePath = smoothBez(coords);
-        const bottom = yPos(hasNeg ? 0 : yMin);
-        const area = linePath
-          + ` L${coords[coords.length - 1][0].toFixed(1)},${bottom.toFixed(1)}`
-          + ` L${coords[0][0].toFixed(1)},${bottom.toFixed(1)} Z`;
-        return (
-          <g key={String(l.key)}>
-            <path d={area} fill={`url(#mg-${String(l.key)})`} stroke="none" />
-            <path d={linePath} fill="none" stroke={l.color}
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {coords.map(([cx, cy], i) => (
-              <circle key={i} cx={cx} cy={cy}
-                r={i === coords.length - 1 ? 4.5 : 2.5}
-                fill={i === coords.length - 1 ? l.color : tokens.surface}
-                stroke={l.color} strokeWidth="1.5" />
-            ))}
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
 
 // ── Row item ─────────────────────────────────────────────────────
 const Row = ({ label, value, color, positive }: { label: string; value: number; color: string; positive?: boolean }) => (
@@ -653,8 +691,18 @@ const Row = ({ label, value, color, positive }: { label: string; value: number; 
 
 // ── Dashboard ────────────────────────────────────────────────────
 const Dashboard = () => {
-  const [alertOpen,  setAlertOpen]  = useState(true);
-  const [trendUnit,  setTrendUnit]  = useState<TrendUnit>("monthly");
+  const [alertOpen, setAlertOpen] = useState(true);
+  const [trendUnit, setTrendUnit] = useState<TrendUnit>("monthly");
+
+  const chartData = trendUnit === "yearly" ? toYearlyData(MONTHLY_DATA) : MONTHLY_DATA;
+  const latest = chartData[chartData.length-1];
+  const prev   = chartData[chartData.length-2] ?? latest;
+
+  const metrics = [
+    { label: "個人 純資産",   value: latest.pNet, delta: latest.pNet - prev.pNet, color: "#1D9E75" },
+    { label: "事業 純資産",   value: latest.bNet, delta: latest.bNet - prev.bNet, color: "#378ADD" },
+    { label: "統合 純資産",   value: latest.cNet, delta: latest.cNet - prev.cNet, color: "#EF9F27" },
+  ];
 
   return (
     <div className="db">
@@ -663,7 +711,9 @@ const Dashboard = () => {
       {/* Heading */}
       <div style={{ marginBottom: 18 }}>
         <h1 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>ダッシュボード</h1>
-        <div style={{ fontSize: 12, color: tokens.textMuted, marginTop: 2 }}>サマリー 現在値・{formatYM(TM)}</div>
+        <div style={{ fontSize: 12, color: tokens.textMuted, marginTop: 2 }}>
+          サマリー 現在値・{formatYM(TM)}
+        </div>
       </div>
 
       {/* Top summary bar */}
@@ -720,20 +770,21 @@ const Dashboard = () => {
 
       {/* 3 columns */}
       <div className="db-grid">
-
         {/* 個人 */}
         <div className="db-col personal">
           <div className="db-col-stripe" />
           <div className="db-col-hdr">
             <div className="db-col-mode">個人</div>
-            <div className="db-col-net" style={{ color: tokens.teal }}>¥{fmt(pNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: tokens.textSecondary }}>万</span></div>
+            <div className="db-col-net" style={{ color: tokens.teal }}>
+              ¥{fmt(pNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: tokens.textSecondary }}>万</span>
+            </div>
             <div className="db-col-net-label">純資産（資産 − 負債）</div>
           </div>
           <div className="db-rows">
-            <Row label="資産合計"   value={pAsset}   color={tokens.teal} />
-            <Row label="負債合計"   value={pLiab}    color={tokens.danger} />
-            <Row label="今月 収入"  value={pRevTM}   color={tokens.primary} />
-            <Row label="今月 支出"  value={pCostTM}  color={tokens.purple} />
+            <Row label="資産合計"  value={pAsset}  color={tokens.teal} />
+            <Row label="負債合計"  value={pLiab}   color={tokens.danger} />
+            <Row label="今月 収入" value={pRevTM}  color={tokens.primary} />
+            <Row label="今月 支出" value={pCostTM} color={tokens.purple} />
           </div>
           <div className="db-row-profit">
             <span className="db-row-profit-label">収支差額</span>
@@ -748,14 +799,16 @@ const Dashboard = () => {
           <div className="db-col-stripe" />
           <div className="db-col-hdr">
             <div className="db-col-mode">事業</div>
-            <div className="db-col-net" style={{ color: tokens.primary }}>¥{fmt(bNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: tokens.textSecondary }}>万</span></div>
+            <div className="db-col-net" style={{ color: tokens.primary }}>
+              ¥{fmt(bNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: tokens.textSecondary }}>万</span>
+            </div>
             <div className="db-col-net-label">純資産（資産 − 負債）</div>
           </div>
           <div className="db-rows">
-            <Row label="資産合計"    value={bAsset}   color={tokens.teal} />
-            <Row label="負債合計"    value={bLiab}    color={tokens.danger} />
-            <Row label="今月 売上"   value={bRevTM}   color={tokens.primary} />
-            <Row label="今月 コスト" value={bCostTM}  color={tokens.purple} />
+            <Row label="資産合計"    value={bAsset}  color={tokens.teal} />
+            <Row label="負債合計"    value={bLiab}   color={tokens.danger} />
+            <Row label="今月 売上"   value={bRevTM}  color={tokens.primary} />
+            <Row label="今月 コスト" value={bCostTM} color={tokens.purple} />
           </div>
           <div className="db-row-profit">
             <span className="db-row-profit-label">営業利益</span>
@@ -770,14 +823,16 @@ const Dashboard = () => {
           <div className="db-col-stripe" />
           <div className="db-col-hdr">
             <div className="db-col-mode">統合</div>
-            <div className="db-col-net" style={{ color: "#BA7517" }}>¥{fmt(cNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: tokens.textSecondary }}>万</span></div>
+            <div className="db-col-net" style={{ color: "#BA7517" }}>
+              ¥{fmt(cNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: tokens.textSecondary }}>万</span>
+            </div>
             <div className="db-col-net-label">純資産合計（個人 + 事業）</div>
           </div>
           <div className="db-rows">
-            <Row label="総資産合計"  value={cAsset}  color={tokens.teal} />
-            <Row label="総負債合計"  value={cLiab}   color={tokens.danger} />
-            <Row label="今月 収入計" value={cRev}    color={tokens.primary} />
-            <Row label="今月 支出計" value={cCost}   color={tokens.purple} />
+            <Row label="総資産合計"  value={cAsset} color={tokens.teal} />
+            <Row label="総負債合計"  value={cLiab}  color={tokens.danger} />
+            <Row label="今月 収入計" value={cRev}   color={tokens.primary} />
+            <Row label="今月 支出計" value={cCost}  color={tokens.purple} />
           </div>
           <div className="db-row-profit">
             <span className="db-row-profit-label">収支差額</span>
@@ -785,8 +840,6 @@ const Dashboard = () => {
               {fmtSign(cProfit)}万円
             </span>
           </div>
-
-          {/* 目標進捗 */}
           <div className="db-progress">
             <div className="db-progress-meta">
               <span className="db-progress-meta-label">純資産目標達成率（目標 ¥5,000万）</span>
@@ -796,147 +849,103 @@ const Dashboard = () => {
               <div className="db-progress-fill" style={{ width: `${targetPct}%`, background: "#EF9F27" }} />
             </div>
           </div>
-
-          {/* 10年予測 */}
           <div className="db-forecast">
             <div className="db-forecast-label">10年後予測（年率5%）</div>
-            <div className="db-forecast-value">¥{fmt(tenYear)}<span className="db-forecast-unit">万</span></div>
-          </div>
-        </div>
-
-      </div>
-      {/* ── 推移グラフ（2グラフ） ── */}
-      <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 14 }}>
-
-        {/* 月次・年次切り替え（共通） */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 4 }}>
-          {(["monthly", "yearly"] as TrendUnit[]).map(u => (
-            <button key={u} onClick={() => setTrendUnit(u)} style={{
-              padding: "4px 12px", fontSize: 11, fontWeight: 500, borderRadius: 6,
-              background: trendUnit === u ? tokens.primaryLight : "none",
-              color: trendUnit === u ? tokens.primary : tokens.textMuted,
-              border: trendUnit === u ? `1px solid ${tokens.borderMid}` : `1px solid ${tokens.border}`,
-              cursor: "pointer", fontFamily: "'Noto Sans JP',sans-serif",
-            }}>
-              {u === "monthly" ? "月次" : "年次"}
-            </button>
-          ))}
-        </div>
-
-        {/* ① ストック：純資産 / 資産 / 負債 */}
-        <div className="db-alert-wrap" style={{ marginBottom: 0 }}>
-          <div className="db-alert-hdr" style={{ cursor: "default" }}>
-            <div className="db-alert-hdr-left" style={{ fontSize: 13 }}>
-              ストック推移
-              <span style={{ fontSize: 11, color: tokens.textMuted, fontWeight: 400, marginLeft: 6 }}>純資産 / 資産 / 負債</span>
+            <div className="db-forecast-value">
+              ¥{fmt(tenYear)}<span className="db-forecast-unit">万</span>
             </div>
-            <div style={{ display: "flex", gap: 14 }}>
-              {[
-                { label: "純資産", color: tokens.primary },
-                { label: "資産",   color: tokens.teal },
-                { label: "負債",   color: tokens.danger },
-              ].map(l => (
-                <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: tokens.textSecondary }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: l.color, display: "inline-block" }} />
-                  {l.label}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{ padding: "10px 16px 14px" }}>
-            <MultiLineChart
-              data={(trendUnit === "yearly" ? toYearlyData(MONTHLY_DATA) : MONTHLY_DATA).map(d => ({
-                ...d,
-                netasset: d.asset - d.liability,
-              }) as any)}
-              lines={[
-                { key: "netasset" as any, label: "純資産", color: tokens.primary },
-                { key: "asset",           label: "資産",   color: tokens.teal },
-                { key: "liability",       label: "負債",   color: tokens.danger },
-              ]}
-              unit={trendUnit}
-            />
-          </div>
-        </div>
-
-        {/* ② フロー：売上 / コスト / 収支差額 */}
-        <div className="db-alert-wrap" style={{ marginBottom: 0 }}>
-          <div className="db-alert-hdr" style={{ cursor: "default" }}>
-            <div className="db-alert-hdr-left" style={{ fontSize: 13 }}>
-              フロー推移
-              <span style={{ fontSize: 11, color: tokens.textMuted, fontWeight: 400, marginLeft: 6 }}>売上 / コスト / 収支差額</span>
-            </div>
-            <div style={{ display: "flex", gap: 14 }}>
-              {[
-                { label: "売上",     color: tokens.primary },
-                { label: "コスト",   color: tokens.purple },
-                { label: "収支差額", color: tokens.teal },
-              ].map(l => (
-                <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: tokens.textSecondary }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: l.color, display: "inline-block" }} />
-                  {l.label}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{ padding: "10px 16px 14px" }}>
-            <MultiLineChart
-              data={(trendUnit === "yearly" ? toYearlyData(MONTHLY_DATA) : MONTHLY_DATA).map(d => ({
-                ...d,
-                profit: d.revenue - d.cost,
-              }) as any)}
-              lines={[
-                { key: "revenue" as any, label: "売上",     color: tokens.primary },
-                { key: "cost",           label: "コスト",   color: tokens.purple },
-                { key: "profit" as any,  label: "収支差額", color: tokens.teal },
-              ]}
-              unit={trendUnit}
-            />
           </div>
         </div>
       </div>
 
-      {/* ── 10年後シミュレーション グラフ ── */}
-      <div style={{ marginTop: 20 }}>
-        <div className="db-alert-wrap">
-          <div className="db-alert-hdr" style={{ cursor: "default" }}>
-            <div className="db-alert-hdr-left" style={{ fontSize: 14 }}>
-              10年後シミュレーション
-              <span className="db-badge info" style={{ marginLeft: 4 }}>平均シナリオ（年率5%）</span>
-            </div>
-            <span style={{ fontSize: 11, color: tokens.textMuted }}>
-              目標 ¥{fmt(5000)}万 ／ 予測 ¥{fmt(tenYear)}万
-            </span>
-          </div>
-          <div style={{ padding: "14px 16px" }}>
-            {/* 凡例 */}
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10 }}>
+      {/* ── 純資産推移グラフ ── */}
+      <div className="nw-panel">
+        <div className="nw-hdr">
+          <div className="nw-hdr-left">
+            <span className="nw-title">純資産の推移</span>
+            <div className="nw-legend">
               {[
-                { label: "低成長（0%）",  color: tokens.teal },
-                { label: "平均（3%）",    color: tokens.primary },
-                { label: "高成長（6%）",  color: tokens.purple },
-                { label: "目標ライン", color: tokens.danger, dashed: true },
+                { label: "個人", color: "#1D9E75", dash: false },
+                { label: "事業", color: "#378ADD", dash: true  },
+                { label: "統合", color: "#EF9F27", dash: false },
               ].map(l => (
-                <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: tokens.textSecondary }}>
-                  {l.dashed ? (
-                    <svg width="20" height="8">
-                      <line x1="0" y1="4" x2="20" y2="4" stroke={l.color} strokeWidth="1.8" strokeDasharray="4,2" />
-                    </svg>
-                  ) : (
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: l.color, display: "inline-block", flexShrink: 0 }} />
-                  )}
+                <div key={l.label} className="nw-legend-item">
+                  {l.dash
+                    ? <div className="nw-legend-dash" style={{ borderColor: l.color }} />
+                    : <div className="nw-legend-dot"  style={{ background: l.color }} />}
                   {l.label}
                 </div>
               ))}
             </div>
-            {/* SVGグラフ */}
-            <SimForecastChart
-              currentNet={cNet}
-              personalNet={pNet}
-              businessNet={bNet}
-              target={5000}
-            />
           </div>
+          <div className="nw-tabs">
+            {(["monthly", "yearly"] as TrendUnit[]).map(u => (
+              <button key={u} className={`nw-tab ${trendUnit === u ? "active" : ""}`}
+                onClick={() => setTrendUnit(u)}>
+                {u === "monthly" ? "月次" : "年次"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* メトリクス行 */}
+        <div className="nw-metrics">
+          {metrics.map(m => {
+            const sign = m.delta >= 0 ? "+" : "";
+            const deltaColor = m.delta >= 0 ? tokens.success : tokens.danger;
+            return (
+              <div key={m.label} className="nw-metric">
+                <div className="nw-metric-label">{m.label}</div>
+                <div className="nw-metric-value" style={{ color: m.color }}>
+                  ¥{fmt(m.value)}<span style={{ fontSize: 11, fontWeight: 400, marginLeft: 3, color: tokens.textSecondary }}>万</span>
+                </div>
+                <div className="nw-metric-delta" style={{ color: deltaColor }}>
+                  {sign}{fmtShort(m.delta)} 前期比
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* グラフ */}
+        <div className="nw-body">
+          <NetWorthChart data={chartData} unit={trendUnit} />
+        </div>
+      </div>
+
+      {/* ── 10年後シミュレーショングラフ ── */}
+      <div className="nw-panel">
+        <div className="nw-hdr">
+          <div className="nw-hdr-left">
+            <span className="nw-title">10年後シミュレーション</span>
+            <span className="db-badge info">平均シナリオ（年率5%）</span>
+            <div className="nw-legend">
+              {[
+                { label: "低成長（0%）", color: tokens.teal,    dash: false },
+                { label: "平均（3%）",   color: tokens.primary, dash: false },
+                { label: "高成長（6%）", color: tokens.purple,  dash: false },
+                { label: "目標ライン",   color: tokens.danger,  dash: true  },
+              ].map(l => (
+                <div key={l.label} className="nw-legend-item">
+                  {l.dash
+                    ? <div className="nw-legend-dash" style={{ borderColor: l.color }} />
+                    : <div className="nw-legend-dot"  style={{ background: l.color }} />}
+                  {l.label}
+                </div>
+              ))}
+            </div>
+          </div>
+          <span style={{ fontSize: 11, color: tokens.textMuted, flexShrink: 0 }}>
+            目標 ¥{fmt(5000)}万 ／ 予測 ¥{fmt(tenYear)}万
+          </span>
+        </div>
+        <div className="nw-body">
+          <SimForecastChart
+            currentNet={cNet}
+            personalNet={pNet}
+            businessNet={bNet}
+            target={5000}
+          />
         </div>
       </div>
     </div>

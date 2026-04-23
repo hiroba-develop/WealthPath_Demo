@@ -29,12 +29,12 @@ type DataTab = "asset" | "liability" | "revenue" | "cost";
 interface Entry {
   id: string;
   tab: DataTab;
-  business: string;  // 事業モード: 事業名 / 個人モード: "" 固定
+  business: string;
   content: string;
   occurred_at: string;
-  due_at: string;     // liability のみ使用
+  due_at: string;
   amount: string;
-  yield_rate: string; // 個人asset のみ使用（%）
+  yield_rate: string;
   memo: string;
 }
 
@@ -133,11 +133,9 @@ const css = `
   .de-pager-month { font-size: 13px; font-weight: 500; color: ${tokens.textPrimary}; min-width: 90px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .de-pager-now { font-size: 11px; background: ${tokens.primaryLight}; color: ${tokens.primary}; padding: 1px 7px; border-radius: 20px; font-weight: 500; }
 
-  /* ── Group header for business grouping ── */
   .de-group-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px 8px;
-    background: ${tokens.bg};
+    padding: 10px 16px 8px; background: ${tokens.bg};
     border-bottom: 1px solid ${tokens.border};
   }
   .de-group-header:not(:first-child) { border-top: 1px solid ${tokens.border}; }
@@ -145,7 +143,6 @@ const css = `
   .de-group-count { font-size: 11px; color: ${tokens.textMuted}; }
   .de-group-total { font-size: 12px; font-weight: 600; color: ${tokens.textPrimary}; }
 
-  /* ── Row list ── */
   .de-row-list { display: flex; flex-direction: column; }
   .de-row-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid ${tokens.border}; transition: background 0.12s; }
   .de-row-item:last-child { border-bottom: none; }
@@ -183,7 +180,6 @@ const css = `
 
   .de-toast { position: fixed; bottom: 24px; right: 24px; color: white; padding: 10px 16px; border-radius: ${tokens.radiusSm}; font-size: 13px; display: flex; align-items: center; gap: 8px; z-index: 1000; animation: deSlideUp 0.2s ease; box-shadow: 0 4px 12px rgba(28,30,46,0.2); }
 
-  /* ── Responsive: tablet ── */
   @media (max-width: 768px) {
     .de-summary-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
     .de-summary-amount { font-size: 18px; }
@@ -199,8 +195,6 @@ const css = `
     .de-row-item { padding: 10px 12px; }
     .de-group-header { padding: 8px 12px; }
   }
-
-  /* ── Responsive: mobile ── */
   @media (max-width: 480px) {
     .de-summary-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .de-summary-card { padding: 12px; }
@@ -310,11 +304,7 @@ const summaryBase: { tab: DataTab; label: string; dotColor: string }[] = [
 
 // ── Helpers ──────────────────────────────────────────────────────
 function emptyEntry(tab: DataTab): Entry {
-  return {
-    id: crypto.randomUUID(), tab,
-    business: "",
-    content: "", occurred_at: "", due_at: "", amount: "", yield_rate: "", memo: "",
-  };
+  return { id: crypto.randomUUID(), tab, business: "", content: "", occurred_at: "", due_at: "", amount: "", yield_rate: "", memo: "" };
 }
 function formatAmount(val: string): string {
   const n = parseInt(val.replace(/,/g, ""), 10);
@@ -340,77 +330,66 @@ function parseAmount(s: string): number {
 }
 
 // ── Sample Data ──────────────────────────────────────────────────
+// Dashboard と整合:
+//   個人 今月: 資産360万(180+95+55+30) − 負債130万(90+40) = 純資産230万
+//              ※サービス開始時(3月)は300万、4月は給与等で増減
+//   事業 今月: 資産80万(50+30) − 負債50万(45+5) = 純資産30万（立ち上げ期）
 const TM  = currentYM();
 const PM  = shiftYM(TM, -1);
 const PM2 = shiftYM(TM, -2);
 
-// 事業用サンプル（business = 事業名）
+// ── 事業用サンプル ────────────────────────────────────────────────
 const BUSINESS_SAMPLE_ENTRIES: Entry[] = [
-  // 今月 A事業
-  { id: "b01", tab: "asset",     business: "A事業",         content: "店舗設備一式",             occurred_at: `${TM}-01`,  due_at: "",                     amount: "800",  yield_rate: "",    memo: "厨房機器・什器含む" },
-  { id: "b02", tab: "asset",     business: "A事業",         content: "運転資金（普通預金）",      occurred_at: `${TM}-01`,  due_at: "",                     amount: "200",  yield_rate: "",    memo: "" },
-  { id: "b03", tab: "asset",     business: "Bコンサルティング", content: "業務用PC・機材",         occurred_at: `${TM}-05`,  due_at: "",                     amount: "150",  yield_rate: "",    memo: "MacBook Pro×3台" },
-  { id: "b04", tab: "liability", business: "A事業",         content: "設備投資ローン",            occurred_at: `${TM}-01`,  due_at: `${shiftYM(TM,60)}-01`, amount: "600",  yield_rate: "",    memo: "金利1.2%" },
-  { id: "b05", tab: "liability", business: "Bコンサルティング", content: "事業用クレジット残高",   occurred_at: `${TM}-15`,  due_at: `${shiftYM(TM,1)}-25`,  amount: "45",   yield_rate: "",    memo: "" },
-  { id: "b06", tab: "revenue",   business: "A事業",         content: "店舗売上（4月分）",         occurred_at: `${TM}-30`,  due_at: "",                     amount: "320",  yield_rate: "",    memo: "前月比+8%" },
-  { id: "b07", tab: "revenue",   business: "Bコンサルティング", content: "C社 月次顧問料",         occurred_at: `${TM}-20`,  due_at: "",                     amount: "50",   yield_rate: "",    memo: "" },
-  { id: "b08", tab: "revenue",   business: "Bコンサルティング", content: "D社 プロジェクト費用",   occurred_at: `${TM}-25`,  due_at: "",                     amount: "120",  yield_rate: "",    memo: "要件定義〜設計フェーズ" },
-  { id: "b09", tab: "cost",      business: "A事業",         content: "食材・仕入原価",            occurred_at: `${TM}-30`,  due_at: "",                     amount: "95",   yield_rate: "",    memo: "" },
-  { id: "b10", tab: "cost",      business: "A事業",         content: "人件費（パート2名）",       occurred_at: `${TM}-25`,  due_at: "",                     amount: "48",   yield_rate: "",    memo: "" },
-  { id: "b11", tab: "cost",      business: "Bコンサルティング", content: "外注費（デザイン）",     occurred_at: `${TM}-18`,  due_at: "",                     amount: "30",   yield_rate: "",    memo: "E社へ発注" },
-  // 先月
-  { id: "b12", tab: "asset",     business: "A事業",            content: "店舗設備一式",          occurred_at: `${PM}-01`,  due_at: "",                     amount: "800",  yield_rate: "",    memo: "厨房機器・什器含む" },
-  { id: "b13", tab: "asset",     business: "A事業",            content: "運転資金（普通預金）",   occurred_at: `${PM}-01`,  due_at: "",                     amount: "220",  yield_rate: "",    memo: "" },
-  { id: "b14", tab: "asset",     business: "Bコンサルティング", content: "業務用PC・機材",        occurred_at: `${PM}-05`,  due_at: "",                     amount: "150",  yield_rate: "",    memo: "" },
-  { id: "b15", tab: "liability", business: "A事業",            content: "設備投資ローン",         occurred_at: `${PM}-01`,  due_at: `${shiftYM(TM,60)}-01`, amount: "610",  yield_rate: "",    memo: "金利1.2%" },
-  { id: "b16", tab: "liability", business: "Bコンサルティング", content: "事業用クレジット残高",  occurred_at: `${PM}-15`,  due_at: `${TM}-25`,             amount: "38",   yield_rate: "",    memo: "" },
-  { id: "b17", tab: "revenue",   business: "A事業",            content: "店舗売上（先月分）",     occurred_at: `${PM}-31`,  due_at: "",                     amount: "296",  yield_rate: "",    memo: "" },
-  { id: "b18", tab: "revenue",   business: "Bコンサルティング", content: "C社 月次顧問料",        occurred_at: `${PM}-20`,  due_at: "",                     amount: "50",   yield_rate: "",    memo: "" },
-  { id: "b19", tab: "cost",      business: "A事業",            content: "食材・仕入原価",         occurred_at: `${PM}-31`,  due_at: "",                     amount: "88",   yield_rate: "",    memo: "" },
-  { id: "b20", tab: "cost",      business: "A事業",            content: "人件費（パート2名）",    occurred_at: `${PM}-25`,  due_at: "",                     amount: "48",   yield_rate: "",    memo: "" },
-  { id: "b21", tab: "cost",      business: "Bコンサルティング", content: "SaaS各種サブスク",      occurred_at: `${PM}-01`,  due_at: "",                     amount: "4",    yield_rate: "",    memo: "Notion, Slack等" },
+  // 今月 — 資産80万・負債50万 → 純資産30万
+  { id:"b01", tab:"asset",     business:"A事業",            content:"運転資金（普通預金）",  occurred_at:`${TM}-01`, due_at:"",                     amount:"50",  yield_rate:"", memo:"" },
+  { id:"b02", tab:"asset",     business:"Bコンサルティング", content:"業務用PC・機材",        occurred_at:`${TM}-05`, due_at:"",                     amount:"30",  yield_rate:"", memo:"MacBook Pro×2台" },
+  { id:"b03", tab:"liability", business:"A事業",            content:"開業準備ローン",         occurred_at:`${TM}-01`, due_at:`${shiftYM(TM,36)}-01`, amount:"45",  yield_rate:"", memo:"金利1.5%" },
+  { id:"b04", tab:"liability", business:"Bコンサルティング", content:"事業用クレジット残高",   occurred_at:`${TM}-15`, due_at:`${shiftYM(TM,1)}-25`,  amount:"5",   yield_rate:"", memo:"" },
+  { id:"b05", tab:"revenue",   business:"A事業",            content:"店舗売上（今月）",       occurred_at:`${TM}-30`, due_at:"",                     amount:"18",  yield_rate:"", memo:"初月" },
+  { id:"b06", tab:"revenue",   business:"Bコンサルティング", content:"C社 初回顧問料",         occurred_at:`${TM}-20`, due_at:"",                     amount:"10",  yield_rate:"", memo:"" },
+  { id:"b07", tab:"cost",      business:"A事業",            content:"仕入原価",               occurred_at:`${TM}-30`, due_at:"",                     amount:"8",   yield_rate:"", memo:"" },
+  { id:"b08", tab:"cost",      business:"A事業",            content:"家賃（店舗）",           occurred_at:`${TM}-01`, due_at:"",                     amount:"6",   yield_rate:"", memo:"" },
+  { id:"b09", tab:"cost",      business:"Bコンサルティング", content:"SaaS各種サブスク",       occurred_at:`${TM}-01`, due_at:"",                     amount:"2",   yield_rate:"", memo:"Notion, Slack等" },
+  // 先月（開業準備中）
+  { id:"b10", tab:"asset",     business:"A事業",            content:"運転資金（普通預金）",   occurred_at:`${PM}-01`, due_at:"",                     amount:"55",  yield_rate:"", memo:"" },
+  { id:"b11", tab:"asset",     business:"Bコンサルティング", content:"業務用PC・機材",         occurred_at:`${PM}-05`, due_at:"",                     amount:"30",  yield_rate:"", memo:"" },
+  { id:"b12", tab:"liability", business:"A事業",            content:"開業準備ローン",          occurred_at:`${PM}-01`, due_at:`${shiftYM(TM,36)}-01`, amount:"47",  yield_rate:"", memo:"金利1.5%" },
+  { id:"b13", tab:"revenue",   business:"A事業",            content:"店舗売上（先月）",        occurred_at:`${PM}-31`, due_at:"",                     amount:"8",   yield_rate:"", memo:"プレオープン" },
+  { id:"b14", tab:"cost",      business:"A事業",            content:"開業準備費用",            occurred_at:`${PM}-15`, due_at:"",                     amount:"12",  yield_rate:"", memo:"内装・備品" },
+  { id:"b15", tab:"cost",      business:"Bコンサルティング", content:"SaaS各種サブスク",        occurred_at:`${PM}-01`, due_at:"",                     amount:"2",   yield_rate:"", memo:"" },
 ];
 
-// 個人用サンプル（business = "" 固定）
+// ── 個人用サンプル ────────────────────────────────────────────────
 const PERSONAL_SAMPLE_ENTRIES: Entry[] = [
-  // 今月
-  { id: "p01", tab: "asset",     business: "", content: "三菱UFJ定期預金",          occurred_at: `${TM}-05`,  due_at: "",                       amount: "500",  yield_rate: "0.2",  memo: "1年定期 自動更新" },
-  { id: "p02", tab: "asset",     business: "", content: "SBI証券 S&P500インデックス", occurred_at: `${TM}-10`,  due_at: "",                       amount: "320",  yield_rate: "7.0",  memo: "過去10年平均リターン" },
-  { id: "p03", tab: "asset",     business: "", content: "自宅マンション（評価額）",   occurred_at: `${TM}-01`,  due_at: "",                       amount: "4200", yield_rate: "",     memo: "路線価ベース" },
-  { id: "p04", tab: "asset",     business: "", content: "iDeCo 全世界株式",          occurred_at: `${TM}-25`,  due_at: "",                       amount: "280",  yield_rate: "5.5",  memo: "" },
-  { id: "p05", tab: "liability", business: "", content: "住宅ローン残高",            occurred_at: `${TM}-01`,  due_at: `${shiftYM(TM,300)}-01`,  amount: "2800", yield_rate: "",     memo: "変動金利 0.475%" },
-  { id: "p06", tab: "liability", business: "", content: "カーローン",                occurred_at: `${TM}-15`,  due_at: `${shiftYM(TM,36)}-15`,   amount: "180",  yield_rate: "",     memo: "残り3年" },
-  { id: "p07", tab: "revenue",   business: "", content: "給与（4月分）",             occurred_at: `${TM}-25`,  due_at: "",                       amount: "55",   yield_rate: "",     memo: "" },
-  { id: "p08", tab: "revenue",   business: "", content: "副業 Webライティング",       occurred_at: `${TM}-20`,  due_at: "",                       amount: "8",    yield_rate: "",     memo: "" },
-  { id: "p09", tab: "revenue",   business: "", content: "配当収入（国内株）",          occurred_at: `${TM}-28`,  due_at: "",                       amount: "12",   yield_rate: "",     memo: "3月権利確定分" },
-  { id: "p10", tab: "cost",      business: "", content: "家賃",                      occurred_at: `${TM}-01`,  due_at: "",                       amount: "12",   yield_rate: "",     memo: "" },
-  { id: "p11", tab: "cost",      business: "", content: "生命保険・医療保険",         occurred_at: `${TM}-05`,  due_at: "",                       amount: "3",    yield_rate: "",     memo: "" },
-  // 先月
-  { id: "p12", tab: "asset",     business: "", content: "三菱UFJ定期預金",           occurred_at: `${PM}-05`,  due_at: "",                       amount: "500",  yield_rate: "0.2",  memo: "1年定期 自動更新" },
-  { id: "p13", tab: "asset",     business: "", content: "SBI証券 S&P500インデックス", occurred_at: `${PM}-10`,  due_at: "",                       amount: "298",  yield_rate: "7.0",  memo: "" },
-  { id: "p14", tab: "asset",     business: "", content: "自宅マンション（評価額）",    occurred_at: `${PM}-01`,  due_at: "",                       amount: "4200", yield_rate: "",     memo: "路線価ベース" },
-  { id: "p15", tab: "asset",     business: "", content: "iDeCo 全世界株式",           occurred_at: `${PM}-25`,  due_at: "",                       amount: "265",  yield_rate: "5.5",  memo: "" },
-  { id: "p16", tab: "asset",     business: "", content: "楽天証券 日本株",             occurred_at: `${PM}-08`,  due_at: "",                       amount: "210",  yield_rate: "3.2",  memo: "トヨタ・ソニー等" },
-  { id: "p17", tab: "liability", business: "", content: "住宅ローン残高",             occurred_at: `${PM}-01`,  due_at: `${shiftYM(TM,300)}-01`,  amount: "2808", yield_rate: "",     memo: "変動金利 0.475%" },
-  { id: "p18", tab: "liability", business: "", content: "カーローン",                 occurred_at: `${PM}-15`,  due_at: `${shiftYM(TM,36)}-15`,   amount: "185",  yield_rate: "",     memo: "残り3年" },
-  { id: "p19", tab: "liability", business: "", content: "奨学金残高",                 occurred_at: `${PM}-01`,  due_at: `${shiftYM(TM,24)}-01`,   amount: "135",  yield_rate: "",     memo: "毎月返済中" },
-  { id: "p20", tab: "revenue",   business: "", content: "給与（先月分）",             occurred_at: `${PM}-25`,  due_at: "",                       amount: "55",   yield_rate: "",     memo: "" },
-  { id: "p21", tab: "revenue",   business: "", content: "副業 Webライティング",        occurred_at: `${PM}-18`,  due_at: "",                       amount: "6",    yield_rate: "",     memo: "" },
-  { id: "p22", tab: "revenue",   business: "", content: "配当収入（国内株）",           occurred_at: `${PM}-28`,  due_at: "",                       amount: "12",   yield_rate: "",     memo: "12月権利確定分" },
-  { id: "p23", tab: "cost",      business: "", content: "家賃",                       occurred_at: `${PM}-01`,  due_at: "",                       amount: "12",   yield_rate: "",     memo: "" },
-  { id: "p24", tab: "cost",      business: "", content: "生命保険・医療保険",          occurred_at: `${PM}-05`,  due_at: "",                       amount: "3",    yield_rate: "",     memo: "" },
-  { id: "p25", tab: "cost",      business: "", content: "食費・日用品",               occurred_at: `${PM}-31`,  due_at: "",                       amount: "8",    yield_rate: "",     memo: "" },
-  { id: "p26", tab: "cost",      business: "", content: "書籍・学習費",               occurred_at: `${PM}-15`,  due_at: "",                       amount: "2",    yield_rate: "",     memo: "" },
+  // 今月 — 資産360万(180+95+55+30) − 負債130万(90+40) = 純資産230万
+  { id:"p01", tab:"asset",     business:"", content:"楽天銀行 普通預金",            occurred_at:`${TM}-05`, due_at:"",                     amount:"180", yield_rate:"0.1", memo:"サービス開始時の元手" },
+  { id:"p02", tab:"asset",     business:"", content:"SBI証券 S&P500インデックス",    occurred_at:`${TM}-10`, due_at:"",                     amount:"95",  yield_rate:"7.0", memo:"積立中" },
+  { id:"p03", tab:"asset",     business:"", content:"iDeCo 全世界株式",              occurred_at:`${TM}-25`, due_at:"",                     amount:"55",  yield_rate:"5.5", memo:"" },
+  { id:"p04", tab:"asset",     business:"", content:"外貨預金（USD）",               occurred_at:`${TM}-15`, due_at:"",                     amount:"30",  yield_rate:"1.5", memo:"150円換算" },
+  { id:"p05", tab:"liability", business:"", content:"奨学金残高",                    occurred_at:`${TM}-01`, due_at:`${shiftYM(TM,48)}-01`, amount:"90",  yield_rate:"",    memo:"毎月返済中" },
+  { id:"p06", tab:"liability", business:"", content:"カーローン",                    occurred_at:`${TM}-15`, due_at:`${shiftYM(TM,30)}-15`, amount:"40",  yield_rate:"",    memo:"残り2.5年" },
+  { id:"p07", tab:"revenue",   business:"", content:"給与（今月）",                  occurred_at:`${TM}-25`, due_at:"",                     amount:"28",  yield_rate:"",    memo:"" },
+  { id:"p08", tab:"revenue",   business:"", content:"副業 Webライティング",           occurred_at:`${TM}-20`, due_at:"",                     amount:"4",   yield_rate:"",    memo:"" },
+  { id:"p09", tab:"cost",      business:"", content:"家賃",                          occurred_at:`${TM}-01`, due_at:"",                     amount:"7",   yield_rate:"",    memo:"" },
+  { id:"p10", tab:"cost",      business:"", content:"生命保険・医療保険",             occurred_at:`${TM}-05`, due_at:"",                     amount:"2",   yield_rate:"",    memo:"" },
+  // 先月 — 純資産約317万（3月スタート時の300万から微増）
+  { id:"p11", tab:"asset",     business:"", content:"楽天銀行 普通預金",             occurred_at:`${PM}-05`, due_at:"",                     amount:"168", yield_rate:"0.1", memo:"" },
+  { id:"p12", tab:"asset",     business:"", content:"SBI証券 S&P500インデックス",    occurred_at:`${PM}-10`, due_at:"",                     amount:"90",  yield_rate:"7.0", memo:"" },
+  { id:"p13", tab:"asset",     business:"", content:"iDeCo 全世界株式",              occurred_at:`${PM}-25`, due_at:"",                     amount:"52",  yield_rate:"5.5", memo:"" },
+  { id:"p14", tab:"asset",     business:"", content:"外貨預金（USD）",               occurred_at:`${PM}-15`, due_at:"",                     amount:"30",  yield_rate:"1.5", memo:"" },
+  { id:"p15", tab:"liability", business:"", content:"奨学金残高",                    occurred_at:`${PM}-01`, due_at:`${shiftYM(TM,48)}-01`, amount:"92",  yield_rate:"",    memo:"" },
+  { id:"p16", tab:"liability", business:"", content:"カーローン",                    occurred_at:`${PM}-15`, due_at:`${shiftYM(TM,30)}-15`, amount:"41",  yield_rate:"",    memo:"" },
+  { id:"p17", tab:"revenue",   business:"", content:"給与（先月）",                  occurred_at:`${PM}-25`, due_at:"",                     amount:"28",  yield_rate:"",    memo:"" },
+  { id:"p18", tab:"cost",      business:"", content:"家賃",                          occurred_at:`${PM}-01`, due_at:"",                     amount:"7",   yield_rate:"",    memo:"" },
+  { id:"p19", tab:"cost",      business:"", content:"食費・日用品",                  occurred_at:`${PM}-31`, due_at:"",                     amount:"5",   yield_rate:"",    memo:"" },
   // 2ヶ月前
-  { id: "p27", tab: "asset",     business: "", content: "外貨預金（USD）",            occurred_at: `${PM2}-15`, due_at: "",                       amount: "95",   yield_rate: "1.5",  memo: "150円換算" },
-  { id: "p28", tab: "cost",      business: "", content: "年間保険料（一括）",         occurred_at: `${PM2}-05`, due_at: "",                       amount: "18",   yield_rate: "",     memo: "" },
+  { id:"p20", tab:"cost",      business:"", content:"年間保険料（一括）",             occurred_at:`${PM2}-05`, due_at:"",                    amount:"8",   yield_rate:"",    memo:"" },
 ];
 
 // ── Component ────────────────────────────────────────────────────
 const DataEntry = ({ mode }: { mode: Mode }) => {
   const modeLabel = mode === "business" ? "事業" : "個人";
   const thisYM    = currentYM();
-
   const sampleEntries = mode === "business" ? BUSINESS_SAMPLE_ENTRIES : PERSONAL_SAMPLE_ENTRIES;
 
   const [activeTab,     setActiveTab]     = useState<DataTab>("asset");
@@ -431,32 +410,16 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 2500);
   }
-
-  function handleTabChange(tab: DataTab) {
-    setActiveTab(tab);
-    setForm(emptyEntry(tab));
-  }
-
-  function handlePrevMonth() {
-    setViewMonth(shiftYM(viewMonth, -1));
-    setFormOpen(false);
-  }
-
+  function handleTabChange(tab: DataTab) { setActiveTab(tab); setForm(emptyEntry(tab)); }
+  function handlePrevMonth() { setViewMonth(shiftYM(viewMonth, -1)); setFormOpen(false); }
   function handleNextMonth() {
     const m = shiftYM(viewMonth, 1);
     setViewMonth(m);
     if (m === thisYM) setFormOpen(true);
   }
-
   function handleSave() {
-    if (mode === "business" && !form.business) {
-      showToast("事業を選択してください", "error");
-      return;
-    }
-    if (!form.content || !form.amount) {
-      showToast("内容と金額は必須です", "error");
-      return;
-    }
+    if (mode === "business" && !form.business) { showToast("事業を選択してください", "error"); return; }
+    if (!form.content || !form.amount) { showToast("内容と金額は必須です", "error"); return; }
     const saved: Entry = { ...form, id: crypto.randomUUID(), tab: activeTab };
     setEntries((prev) => [saved, ...prev]);
     setForm(emptyEntry(activeTab));
@@ -465,31 +428,24 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
     if (savedMonth !== thisYM) setFormOpen(false);
     showToast("保存しました");
   }
-
   function handleDelete(id: string) {
     setEntries((prev) => prev.filter((e) => e.id !== id));
     setSelectedEntry(null);
     showToast("削除しました");
   }
-
   function handleEditSave() {
-    if (!editForm || !editForm.content || !editForm.amount) {
-      showToast("内容と金額は必須です", "error");
-      return;
-    }
+    if (!editForm || !editForm.content || !editForm.amount) { showToast("内容と金額は必須です", "error"); return; }
     setEntries((prev) => prev.map((e) => (e.id === editForm.id ? editForm : e)));
     setSelectedEntry(editForm);
     setIsEditing(false);
     showToast("更新しました");
   }
 
-  // 表示月 × activeTab のエントリー
   const monthEntries = entries.filter((e) => {
     const em = toYM(e.occurred_at) || thisYM;
     return em === viewMonth && e.tab === activeTab;
   });
 
-  // 事業モード：事業名ごとにグループ化
   const groupedEntries: { name: string; items: Entry[] }[] = (() => {
     if (mode !== "business") return [{ name: "", items: monthEntries }];
     const map = new Map<string, Entry[]>();
@@ -499,22 +455,17 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
     });
-    return Array.from(map.entries())
-      .filter(([, items]) => items.length > 0)
-      .map(([name, items]) => ({ name, items }));
+    return Array.from(map.entries()).filter(([, items]) => items.length > 0).map(([name, items]) => ({ name, items }));
   })();
 
   function monthTotal(tab: DataTab): number {
-    return entries
-      .filter((e) => e.tab === tab && (toYM(e.occurred_at) || thisYM) === viewMonth)
-      .reduce((s, e) => s + parseAmount(e.amount), 0);
+    return entries.filter((e) => e.tab === tab && (toYM(e.occurred_at) || thisYM) === viewMonth).reduce((s, e) => s + parseAmount(e.amount), 0);
   }
   function totalAmount(tab: DataTab): number {
     return entries.filter((e) => e.tab === tab).reduce((s, e) => s + parseAmount(e.amount), 0);
   }
 
   // ── Form fields ──────────────────────────────────────────────
-  // 共通パーツ
   const fBusiness = (
     <div className="de-group">
       <label className="de-label">事業<span className="de-req">*</span></label>
@@ -576,69 +527,19 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
     </div>
   );
 
-  // レイアウト定義
-  // 事業【資産・売上・コスト】: 事業 / 内容 / 発生日・金額 / メモ
-  // 事業【負債】:               事業 / 内容 / 発生日・返済期日 / 金額 / メモ
-  // 個人【資産】:               内容 / 発生日・金額 / メモ / 利回り
-  // 個人【負債】:               内容 / 発生日・返済期日 / 金額 / メモ
-  // 個人【売上・コスト】:       内容 / 発生日・金額 / メモ
   const formFields = (
     <div className="de-form-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {mode === "business" && activeTab !== "liability" && (
-        // 事業【資産・売上・コスト】
-        <>
-          {fBusiness}
-          {fContent("例: 店舗売上、設備一式 など")}
-          <div className="de-grid-2">{fOccurredAt}{fAmount}</div>
-          {fMemo}
-        </>
-      )}
-      {mode === "business" && activeTab === "liability" && (
-        // 事業【負債】
-        <>
-          {fBusiness}
-          {fContent("例: 設備投資ローン")}
-          <div className="de-grid-2">{fOccurredAt}{fDueAt}</div>
-          <div className="de-grid-2">{fAmount}<div /></div>
-          {fMemo}
-        </>
-      )}
-      {mode === "personal" && activeTab === "asset" && (
-        // 個人【資産】
-        <>
-          {fContent("例: 三菱UFJ定期預金")}
-          <div className="de-grid-2">{fOccurredAt}{fAmount}</div>
-          {fMemo}
-          <div className="de-grid-2">{fYield}<div /></div>
-        </>
-      )}
-      {mode === "personal" && activeTab === "liability" && (
-        // 個人【負債】
-        <>
-          {fContent("例: 住宅ローン")}
-          <div className="de-grid-2">{fOccurredAt}{fDueAt}</div>
-          <div className="de-grid-2">{fAmount}<div /></div>
-          {fMemo}
-        </>
-      )}
-      {mode === "personal" && (activeTab === "revenue" || activeTab === "cost") && (
-        // 個人【売上・コスト】
-        <>
-          {fContent("例: 給与、副業収入 など")}
-          <div className="de-grid-2">{fOccurredAt}{fAmount}</div>
-          {fMemo}
-        </>
-      )}
+      {mode === "business" && activeTab !== "liability" && (<>{fBusiness}{fContent("例: 店舗売上、設備一式 など")}<div className="de-grid-2">{fOccurredAt}{fAmount}</div>{fMemo}</>)}
+      {mode === "business" && activeTab === "liability" && (<>{fBusiness}{fContent("例: 設備投資ローン")}<div className="de-grid-2">{fOccurredAt}{fDueAt}</div><div className="de-grid-2">{fAmount}<div /></div>{fMemo}</>)}
+      {mode === "personal" && activeTab === "asset" && (<>{fContent("例: 楽天銀行 普通預金")}<div className="de-grid-2">{fOccurredAt}{fAmount}</div>{fMemo}<div className="de-grid-2">{fYield}<div /></div></>)}
+      {mode === "personal" && activeTab === "liability" && (<>{fContent("例: 奨学金、カーローン")}<div className="de-grid-2">{fOccurredAt}{fDueAt}</div><div className="de-grid-2">{fAmount}<div /></div>{fMemo}</>)}
+      {mode === "personal" && (activeTab === "revenue" || activeTab === "cost") && (<>{fContent("例: 給与、副業収入 など")}<div className="de-grid-2">{fOccurredAt}{fAmount}</div>{fMemo}</>)}
     </div>
   );
 
-  // ── Row renderer ─────────────────────────────────────────────
   const renderRow = (entry: Entry) => (
-    <div
-      key={entry.id}
-      className="de-row-item"
-      onClick={() => { setSelectedEntry(entry); setIsEditing(false); setEditForm(null); }}
-    >
+    <div key={entry.id} className="de-row-item"
+      onClick={() => { setSelectedEntry(entry); setIsEditing(false); setEditForm(null); }}>
       <div className="de-row-bar" style={{ background: tabColorMap[entry.tab] }} />
       <div className="de-row-info">
         <div className="de-row-content">{entry.content}</div>
@@ -660,7 +561,6 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
     <div className="de-wrap">
       <style>{css}</style>
 
-      {/* Heading */}
       <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
         <h1 style={{ fontSize: 20, fontWeight: 600, color: tokens.textPrimary, margin: 0 }}>データ入力</h1>
         <span style={{
@@ -671,47 +571,31 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
         }}>{modeLabel}</span>
       </div>
 
-      {/* Summary / Tab cards */}
       <div className="de-summary-row">
         {summaryBase.map(({ tab, label, dotColor }) => (
-          <div
-            key={tab}
-            className={`de-summary-card ${activeTab === tab ? `active-${tab}` : ""}`}
-            onClick={() => handleTabChange(tab)}
-          >
-            <div className="de-summary-label">
-              <span className="de-dot" style={{ background: dotColor }} />{label}
-            </div>
+          <div key={tab} className={`de-summary-card ${activeTab === tab ? `active-${tab}` : ""}`}
+            onClick={() => handleTabChange(tab)}>
+            <div className="de-summary-label"><span className="de-dot" style={{ background: dotColor }} />{label}</div>
             <div className="de-summary-amount" style={{ color: dotColor }}>
-              {totalAmount(tab).toLocaleString("ja-JP")}
-              <span className="de-summary-unit">万円</span>
+              {totalAmount(tab).toLocaleString("ja-JP")}<span className="de-summary-unit">万円</span>
             </div>
             <div className="de-month-total">
-              {formatYM(viewMonth)}計&nbsp;
-              <span className="mv">{monthTotal(tab).toLocaleString("ja-JP")}万円</span>
+              {formatYM(viewMonth)}計&nbsp;<span className="mv">{monthTotal(tab).toLocaleString("ja-JP")}万円</span>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Form accordion */}
       <div className="de-panel">
-        <div
-          className={`de-accordion-header ${formOpen ? "open" : ""}`}
-          onClick={() => setFormOpen((v) => !v)}
-        >
+        <div className={`de-accordion-header ${formOpen ? "open" : ""}`} onClick={() => setFormOpen((v) => !v)}>
           <div className="de-accordion-title">
             {modeLabel} · {tabLabelMap[activeTab]}
             <span className={`de-badge ${badgeClassMap[activeTab]}`}>{tabNameMap[activeTab]}</span>
           </div>
           <div className="de-accordion-right">
             {formOpen && (
-              <button
-                className="de-btn de-btn-sm de-btn-ghost"
-                onClick={(e) => { e.stopPropagation(); setForm(emptyEntry(activeTab)); }}
-              >
-                クリア
-              </button>
+              <button className="de-btn de-btn-sm de-btn-ghost"
+                onClick={(e) => { e.stopPropagation(); setForm(emptyEntry(activeTab)); }}>クリア</button>
             )}
             <span className={`de-chevron ${formOpen ? "open" : ""}`}><ChevronDownIcon /></span>
           </div>
@@ -727,7 +611,6 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
         )}
       </div>
 
-      {/* List */}
       <div>
         <div className="de-list-header">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -754,17 +637,13 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
               <p className="de-empty-text">{formatYM(viewMonth)}の{tabNameMap[activeTab]}データはありません</p>
             </div>
           ) : mode === "business" ? (
-            // 事業モード：事業名グループ表示
             <div className="de-row-list">
               {groupedEntries.map(({ name, items }) => {
                 const groupTotal = items.reduce((s, e) => s + parseAmount(e.amount), 0);
                 return (
                   <div key={name}>
                     <div className="de-group-header">
-                      <span className="de-group-name">
-                        <BuildingIcon />{name}
-                        <span className="de-group-count">{items.length}件</span>
-                      </span>
+                      <span className="de-group-name"><BuildingIcon />{name}<span className="de-group-count">{items.length}件</span></span>
                       <span className="de-group-total">{groupTotal.toLocaleString("ja-JP")}万円</span>
                     </div>
                     {items.map(renderRow)}
@@ -773,31 +652,22 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
               })}
             </div>
           ) : (
-            // 個人モード：フラットリスト
-            <div className="de-row-list">
-              {monthEntries.map(renderRow)}
-            </div>
+            <div className="de-row-list">{monthEntries.map(renderRow)}</div>
           )}
         </div>
       </div>
 
-      {/* Detail / Edit Modal */}
       {selectedEntry && (
-        <div
-          className="de-overlay"
-          onClick={(e) => { if (e.target === e.currentTarget) { setSelectedEntry(null); setIsEditing(false); } }}
-        >
+        <div className="de-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) { setSelectedEntry(null); setIsEditing(false); } }}>
           <div className="de-modal">
             <div className="de-modal-header">
               <span className="de-modal-title">
                 {isEditing ? "編集" : "詳細"}
                 <span className={`de-badge ${badgeClassMap[selectedEntry.tab]}`}>{tabNameMap[selectedEntry.tab]}</span>
               </span>
-              <button className="de-modal-close" onClick={() => { setSelectedEntry(null); setIsEditing(false); }}>
-                <CloseIcon />
-              </button>
+              <button className="de-modal-close" onClick={() => { setSelectedEntry(null); setIsEditing(false); }}><CloseIcon /></button>
             </div>
-
             <div className="de-modal-body">
               {isEditing && editForm ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingTop: 16 }}>
@@ -899,7 +769,6 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
                 </>
               )}
             </div>
-
             <div className="de-modal-footer">
               <button className="de-btn de-btn-danger" onClick={() => handleDelete(selectedEntry.id)}>
                 <TrashIcon />削除
@@ -922,7 +791,6 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
         </div>
       )}
 
-      {/* Toast */}
       {toast && (
         <div className="de-toast" style={{ background: toast.type === "error" ? tokens.danger : "#1a6e4f" }}>
           {toast.type !== "error" && <CheckIcon />}
