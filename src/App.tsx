@@ -1,13 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
-import Home from "./pages/Home";
+//import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Settings from "./pages/Settings";
 import WeeklyTasks from "./pages/WeeklyTasks";
 import AssetManagement from "./pages/AssetManagement";
 import InvestmentManagement from "./pages/InvestmentManagement";
-import TenYearSimulation from "./pages/TenYearSimulation";
+//import TenYearSimulation from "./pages/TenYearSimulation";
+import Simulation from "./pages/Simulation";
 import TaxOptimization from "./pages/TaxOptimization";
 import AccountingIntegration from "./pages/AccountingIntegration";
 import Payroll from "./pages/Payroll";
@@ -17,6 +18,8 @@ import BalanceSheet from "./pages/BalanceSheet";
 import FinancialAnalysis from "./pages/FinancialAnalysis";
 import Reports from "./pages/Reports";
 import TaxAccountantChat from "./pages/TaxAccountantChat";
+import DataEntry from "./pages/DataEntry";
+import Dashboard from "./pages/Dashboard";
 
 // 認証が必要なルートを保護するコンポーネント
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -62,7 +65,7 @@ const AppRoutes = () => {
         path="/"
         element={
           <ProtectedRoute>
-            <Home />
+            <Dashboard />
           </ProtectedRoute>
         }
       />
@@ -94,7 +97,7 @@ const AppRoutes = () => {
         path="/simulation"
         element={
           <ProtectedRoute>
-            <TenYearSimulation />
+            <Simulation />
           </ProtectedRoute>
         }
       />
@@ -178,6 +181,22 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/data-entry/business"
+        element={
+          <ProtectedRoute>
+            <DataEntry mode="business" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/data-entry/personal"
+        element={
+          <ProtectedRoute>
+            <DataEntry mode="personal" />
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404ページ - ダッシュボードにリダイレクト */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -188,7 +207,7 @@ const AppRoutes = () => {
 // メインAppコンポーネント
 const App = () => {
   return (
-    <Router>
+    <Router basename="/WealthPath_Demo">
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
