@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
 //import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Settings from "./pages/Settings";
 import WeeklyTasks from "./pages/WeeklyTasks";
 import AssetManagement from "./pages/AssetManagement";
@@ -58,6 +59,12 @@ const AppRoutes = () => {
       <Route
         path="/login"
         element={user ? <Navigate to="/" replace /> : <Login />}
+      />
+
+      {/* 新規登録ページ */}
+      <Route
+        path="/register"
+        element={user ? <Navigate to="/" replace /> : <Register />}
       />
 
       {/* 保護されたルート */}
