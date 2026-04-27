@@ -1,16 +1,5 @@
 import React, { useState, useMemo } from "react";
-
-const T = {
-  bg: "#F7F8FC", surface: "#FFFFFF", border: "#E5E7EF", borderMid: "#C8CCE0",
-  primary: "#4F63E7", primaryLight: "#EEF1FD", primaryHover: "#3A4FC8",
-  teal: "#3CC9A0", tealLight: "#E1F5EE", tealDark: "#0F6E56",
-  amber: "#EF9F27", amberLight: "#FAEEDA", amberDark: "#BA7517",
-  purple: "#9B7EF8", purpleLight: "#F0ECFE",
-  textPrimary: "#1C1E2E", textSecondary: "#7A7D94", textMuted: "#A8ABBA",
-  danger: "#E05252", dangerLight: "#FEF0F0",
-  success: "#10B981", successLight: "#ECFDF5",
-  radius: "12px", radiusSm: "8px",
-};
+import { T } from "../components/Authshared";
 
 function fmt(n: number): string {
   if (Math.abs(n) >= 10000) return (n / 10000).toFixed(1) + "億";

@@ -1,28 +1,5 @@
 import { useState } from "react";
-// ── Design Tokens ────────────────────────────────────────────────
-const tokens = {
-  bg: "#F7F8FC",
-  surface: "#FFFFFF",
-  border: "#E5E7EF",
-  borderMid: "#D0D4E8",
-  primary: "#4F63E7",
-  primaryLight: "#EEF1FD",
-  teal: "#3CC9A0",
-  tealLight: "#E1F5EE",
-  purple: "#9B7EF8",
-  purpleLight: "#F0ECFE",
-  textPrimary: "#1C1E2E",
-  textSecondary: "#7A7D94",
-  textMuted: "#A8ABBA",
-  danger: "#E05252",
-  dangerLight: "#FEF0F0",
-  warning: "#F59E0B",
-  warningLight: "#FEF3C7",
-  success: "#10B981",
-  successLight: "#ECFDF5",
-  radius: "12px",
-  radiusSm: "8px",
-};
+import { T } from "../components/Authshared";
 
 // ── Simulation constants & calcForecast ──────────────────────────
 const SIM_RATE_A  = 0.03;
@@ -268,71 +245,71 @@ function toYearlyData(monthly: typeof MONTHLY_DATA) {
 // ── Styles ───────────────────────────────────────────────────────
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap');
-  .db { font-family: 'Noto Sans JP', sans-serif; color: ${tokens.textPrimary}; }
+  .db { font-family: 'Noto Sans JP', sans-serif; color: ${T.textPrimary}; }
 
   /* ── Top summary ── */
   .db-top { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
   .db-top-card {
-    background: ${tokens.surface}; border: 1px solid ${tokens.border};
-    border-radius: ${tokens.radius}; padding: 14px 16px;
+    background: ${T.surface}; border: 1px solid ${T.border};
+    border-radius: ${T.radius}; padding: 14px 16px;
   }
-  .db-top-label { font-size: 11px; color: ${tokens.textMuted}; margin-bottom: 5px; }
+  .db-top-label { font-size: 11px; color: ${T.textMuted}; margin-bottom: 5px; }
   .db-top-value { font-size: 21px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.1; }
-  .db-top-unit  { font-size: 11px; font-weight: 400; margin-left: 2px; color: ${tokens.textSecondary}; }
-  .db-top-sub   { font-size: 10.5px; color: ${tokens.textMuted}; margin-top: 4px; }
-  .db-top-sub.up   { color: ${tokens.teal}; }
-  .db-top-sub.down { color: ${tokens.danger}; }
+  .db-top-unit  { font-size: 11px; font-weight: 400; margin-left: 2px; color: ${T.textSecondary}; }
+  .db-top-sub   { font-size: 10.5px; color: ${T.textMuted}; margin-top: 4px; }
+  .db-top-sub.up   { color: ${T.teal}; }
+  .db-top-sub.down { color: ${T.danger}; }
 
   /* ── Alert ── */
   .db-alert-wrap {
-    background: ${tokens.surface}; border: 1px solid ${tokens.border};
-    border-radius: ${tokens.radius}; margin-bottom: 20px; overflow: hidden;
+    background: ${T.surface}; border: 1px solid ${T.border};
+    border-radius: ${T.radius}; margin-bottom: 20px; overflow: hidden;
   }
   .db-alert-hdr {
     display: flex; align-items: center; justify-content: space-between;
     padding: 11px 16px; cursor: pointer; user-select: none;
     transition: background 0.12s;
   }
-  .db-alert-hdr:hover { background: ${tokens.bg}; }
-  .db-alert-hdr.open { border-bottom: 1px solid ${tokens.border}; }
+  .db-alert-hdr:hover { background: ${T.bg}; }
+  .db-alert-hdr.open { border-bottom: 1px solid ${T.border}; }
   .db-alert-hdr-left { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
-  .db-chevron { color: ${tokens.textMuted}; transition: transform 0.2s; display: flex; }
+  .db-chevron { color: ${T.textMuted}; transition: transform 0.2s; display: flex; }
   .db-chevron.open { transform: rotate(180deg); }
 
   .db-alert-row {
     display: flex; align-items: flex-start; gap: 10px;
-    padding: 9px 16px; border-bottom: 1px solid ${tokens.border};
+    padding: 9px 16px; border-bottom: 1px solid ${T.border};
   }
   .db-alert-row:last-child { border-bottom: none; }
   .db-alert-dot { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; flex-shrink: 0; margin-top: 1px; }
-  .db-alert-dot.danger  { background: ${tokens.danger}; }
-  .db-alert-dot.warning { background: ${tokens.warning}; }
-  .db-alert-dot.info    { background: ${tokens.primary}; }
+  .db-alert-dot.danger  { background: ${T.danger}; }
+  .db-alert-dot.warning { background: ${T.warning}; }
+  .db-alert-dot.info    { background: ${T.primary}; }
   .db-alert-msg    { font-size: 12.5px; font-weight: 500; }
-  .db-alert-detail { font-size: 11px; color: ${tokens.textMuted}; margin-top: 1px; }
+  .db-alert-detail { font-size: 11px; color: ${T.textMuted}; margin-top: 1px; }
 
   .db-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; }
-  .db-badge.danger  { background: ${tokens.dangerLight};  color: ${tokens.danger}; }
-  .db-badge.warning { background: ${tokens.warningLight}; color: ${tokens.warning}; }
-  .db-badge.info    { background: ${tokens.primaryLight}; color: ${tokens.primary}; }
-  .db-badge.ok      { background: ${tokens.successLight}; color: ${tokens.success}; }
+  .db-badge.danger  { background: ${T.dangerLight};  color: ${T.danger}; }
+  .db-badge.warning { background: ${T.warningLight}; color: ${T.warning}; }
+  .db-badge.info    { background: ${T.primaryLight}; color: ${T.primary}; }
+  .db-badge.ok      { background: ${T.successLight}; color: ${T.success}; }
 
   /* ── 3-column grid ── */
   .db-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 
   .db-col {
-    background: ${tokens.surface}; border: 1px solid ${tokens.border};
-    border-radius: ${tokens.radius}; overflow: hidden;
+    background: ${T.surface}; border: 1px solid ${T.border};
+    border-radius: ${T.radius}; overflow: hidden;
     position: relative;
   }
   .db-col.personal { border-color: #9FE1CB; }
-  .db-col.personal .db-col-hdr { background: ${tokens.tealLight}; border-bottom-color: #9FE1CB; }
+  .db-col.personal .db-col-hdr { background: ${T.tealLight}; border-bottom-color: #9FE1CB; }
   .db-col.personal .db-col-mode { color: #0F6E56; }
-  .db-col.personal .db-col-stripe { background: ${tokens.teal}; }
+  .db-col.personal .db-col-stripe { background: ${T.teal}; }
   .db-col.business { border-color: #B5D4F4; }
-  .db-col.business .db-col-hdr { background: ${tokens.primaryLight}; border-bottom-color: #B5D4F4; }
+  .db-col.business .db-col-hdr { background: ${T.primaryLight}; border-bottom-color: #B5D4F4; }
   .db-col.business .db-col-mode { color: #185FA5; }
-  .db-col.business .db-col-stripe { background: ${tokens.primary}; }
+  .db-col.business .db-col-stripe { background: ${T.primary}; }
   .db-col.combined { border-color: #FAC775; }
   .db-col.combined .db-col-hdr { background: #FAEEDA; border-bottom-color: #FAC775; }
   .db-col.combined .db-col-mode { color: #633806; }
@@ -342,73 +319,73 @@ const css = `
     position: absolute; top: 0; left: 0; bottom: 0;
     width: 4px; border-radius: 12px 0 0 12px;
   }
-  .db-col-hdr { padding: 14px 18px 12px 22px; border-bottom: 1px solid ${tokens.border}; }
+  .db-col-hdr { padding: 14px 18px 12px 22px; border-bottom: 1px solid ${T.border}; }
   .db-col-mode { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; margin-bottom: 4px; }
   .db-col-net  { font-size: 26px; font-weight: 700; letter-spacing: -0.8px; }
-  .db-col-net-label { font-size: 11px; color: ${tokens.textSecondary}; margin-top: 1px; }
+  .db-col-net-label { font-size: 11px; color: ${T.textSecondary}; margin-top: 1px; }
   .db-rows { padding: 4px 0; }
   .db-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 9px 18px 9px 22px; border-bottom: 1px solid ${tokens.border};
+    padding: 9px 18px 9px 22px; border-bottom: 1px solid ${T.border};
   }
   .db-row:last-child { border-bottom: none; }
   .db-row-left { display: flex; align-items: center; gap: 8px; }
   .db-row-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .db-row-label { font-size: 13px; color: ${tokens.textSecondary}; }
+  .db-row-label { font-size: 13px; color: ${T.textSecondary}; }
   .db-row-value { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
   .db-row-profit {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 18px 10px 22px; background: ${tokens.bg};
-    border-top: 1px solid ${tokens.border};
+    padding: 10px 18px 10px 22px; background: ${T.bg};
+    border-top: 1px solid ${T.border};
   }
-  .db-row-profit-label { font-size: 12px; font-weight: 500; color: ${tokens.textSecondary}; }
+  .db-row-profit-label { font-size: 12px; font-weight: 500; color: ${T.textSecondary}; }
   .db-row-profit-value { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
 
-  .db-progress { padding: 12px 18px 12px 22px; border-top: 1px solid ${tokens.border}; }
+  .db-progress { padding: 12px 18px 12px 22px; border-top: 1px solid ${T.border}; }
   .db-progress-meta { display: flex; justify-content: space-between; margin-bottom: 5px; }
-  .db-progress-meta-label { font-size: 11px; color: ${tokens.textMuted}; }
+  .db-progress-meta-label { font-size: 11px; color: ${T.textMuted}; }
   .db-progress-meta-value { font-size: 12px; font-weight: 600; color: #BA7517; }
-  .db-progress-track { height: 6px; background: ${tokens.border}; border-radius: 4px; overflow: hidden; }
+  .db-progress-track { height: 6px; background: ${T.border}; border-radius: 4px; overflow: hidden; }
   .db-progress-fill  { height: 100%; border-radius: 4px; transition: width 0.7s ease; }
-  .db-forecast { padding: 10px 18px 14px 22px; border-top: 1px solid ${tokens.border}; }
-  .db-forecast-label { font-size: 11px; color: ${tokens.textMuted}; margin-bottom: 3px; }
+  .db-forecast { padding: 10px 18px 14px 22px; border-top: 1px solid ${T.border}; }
+  .db-forecast-label { font-size: 11px; color: ${T.textMuted}; margin-bottom: 3px; }
   .db-forecast-value { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; color: #BA7517; }
-  .db-forecast-unit  { font-size: 11px; font-weight: 400; margin-left: 3px; color: ${tokens.textSecondary}; }
+  .db-forecast-unit  { font-size: 11px; font-weight: 400; margin-left: 3px; color: ${T.textSecondary}; }
 
   /* ── Net Worth Chart ── */
   .nw-panel {
-    background: ${tokens.surface}; border: 1px solid ${tokens.border};
-    border-radius: ${tokens.radius}; overflow: hidden; margin-top: 20px;
+    background: ${T.surface}; border: 1px solid ${T.border};
+    border-radius: ${T.radius}; overflow: hidden; margin-top: 20px;
   }
   .nw-hdr {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 16px; border-bottom: 1px solid ${tokens.border};
+    padding: 12px 16px; border-bottom: 1px solid ${T.border};
     flex-wrap: wrap; gap: 8px;
   }
   .nw-hdr-left { display: flex; align-items: center; gap: 14px; }
   .nw-title { font-size: 13px; font-weight: 600; }
   .nw-legend { display: flex; gap: 14px; flex-wrap: wrap; }
-  .nw-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: ${tokens.textSecondary}; }
+  .nw-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: ${T.textSecondary}; }
   .nw-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .nw-legend-dash { width: 18px; height: 0; border-top: 2px dashed; flex-shrink: 0; }
 
-  .nw-metrics { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid ${tokens.border}; }
-  .nw-metric { padding: 12px 18px; border-right: 1px solid ${tokens.border}; }
+  .nw-metrics { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid ${T.border}; }
+  .nw-metric { padding: 12px 18px; border-right: 1px solid ${T.border}; }
   .nw-metric:last-child { border-right: none; }
-  .nw-metric-label { font-size: 11px; color: ${tokens.textMuted}; margin-bottom: 3px; }
+  .nw-metric-label { font-size: 11px; color: ${T.textMuted}; margin-bottom: 3px; }
   .nw-metric-value { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
   .nw-metric-delta { font-size: 11px; margin-top: 2px; }
 
   .nw-tabs { display: flex; gap: 4px; flex-shrink: 0; }
   .nw-tab {
     padding: 4px 12px; font-size: 11px; font-weight: 500; border-radius: 6px;
-    border: 1px solid ${tokens.border}; background: none;
-    color: ${tokens.textMuted}; cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    border: 1px solid ${T.border}; background: none;
+    color: ${T.textMuted}; cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
     transition: background 0.12s, color 0.12s;
   }
   .nw-tab.active {
-    background: ${tokens.primaryLight}; color: ${tokens.primary};
-    border-color: ${tokens.borderMid};
+    background: ${T.primaryLight}; color: ${T.primary};
+    border-color: ${T.borderMid};
   }
 
   .nw-body { padding: 14px 16px; }
@@ -418,7 +395,7 @@ const css = `
     .db-top  { grid-template-columns: repeat(3, 1fr); }
     .db-grid { grid-template-columns: 1fr; }
     .nw-metrics { grid-template-columns: 1fr; }
-    .nw-metric { border-right: none; border-bottom: 1px solid ${tokens.border}; }
+    .nw-metric { border-right: none; border-bottom: 1px solid ${T.border}; }
     .nw-metric:last-child { border-bottom: none; }
   }
   @media (max-width: 540px) {
@@ -494,8 +471,8 @@ const NetWorthChart = ({ data, unit }: { data: ChartDataPoint[]; unit: TrendUnit
         return (
           <g key={ti}>
             <line x1={PL} y1={yv} x2={W-PR} y2={yv}
-              stroke={tokens.border} strokeWidth="1" strokeDasharray="4,4" />
-            <text x={PL-6} y={yv+3.5} textAnchor="end" fontSize="8" fill={tokens.textMuted}
+              stroke={T.border} strokeWidth="1" strokeDasharray="4,4" />
+            <text x={PL-6} y={yv+3.5} textAnchor="end" fontSize="8" fill={T.textMuted}
               fontFamily="'Noto Sans JP',sans-serif">{lbl}</text>
           </g>
         );
@@ -504,7 +481,7 @@ const NetWorthChart = ({ data, unit }: { data: ChartDataPoint[]; unit: TrendUnit
       {/* x labels */}
       {xLabels.map(({ i, label }) => (
         <text key={i} x={xPos(i)} y={H-PB+12} textAnchor="middle"
-          fontSize="8" fill={tokens.textMuted} fontFamily="'Noto Sans JP',sans-serif">{label}</text>
+          fontSize="8" fill={T.textMuted} fontFamily="'Noto Sans JP',sans-serif">{label}</text>
       ))}
 
       {/* area + line per series */}
@@ -529,7 +506,7 @@ const NetWorthChart = ({ data, unit }: { data: ChartDataPoint[]; unit: TrendUnit
             {pts.map(([cx,cy], i) => (
               <circle key={i} cx={cx} cy={cy}
                 r={i === pts.length-1 ? 4.5 : 2.5}
-                fill={i === pts.length-1 ? s.color : tokens.surface}
+                fill={i === pts.length-1 ? s.color : T.surface}
                 stroke={s.color} strokeWidth="1.5" />
             ))}
           </g>
@@ -576,9 +553,9 @@ const SimForecastChart = ({ currentNet, personalNet, businessNet, target }: {
   const cW = W - PL - PR; const cH = H - PT - PB;
 
   const scenarios = [
-    { key: "low",  aR: Math.max(SIM_RATE_A - 0.03, 0), gR: Math.max(SIM_RATE_G - 0.03, 0), color: tokens.teal,    w: 2 },
-    { key: "mid",  aR: SIM_RATE_A,                       gR: SIM_RATE_G,                      color: tokens.primary, w: 2.5 },
-    { key: "high", aR: SIM_RATE_A + 0.03,                gR: SIM_RATE_G + 0.03,               color: tokens.purple,  w: 2 },
+    { key: "low",  aR: Math.max(SIM_RATE_A - 0.03, 0), gR: Math.max(SIM_RATE_G - 0.03, 0), color: T.teal,    w: 2 },
+    { key: "mid",  aR: SIM_RATE_A,                       gR: SIM_RATE_G,                      color: T.primary, w: 2.5 },
+    { key: "high", aR: SIM_RATE_A + 0.03,                gR: SIM_RATE_G + 0.03,               color: T.purple,  w: 2 },
   ];
 
   const allV: number[] = [0, target];
@@ -620,8 +597,8 @@ const SimForecastChart = ({ currentNet, personalNet, businessNet, target }: {
         return (
           <g key={v}>
             <line x1={PL} y1={yv} x2={W - PR} y2={yv}
-              stroke={tokens.border} strokeWidth="1" strokeDasharray="4,4" />
-            <text x={PL - 6} y={yv + 3.5} textAnchor="end" fontSize="8" fill={tokens.textMuted}
+              stroke={T.border} strokeWidth="1" strokeDasharray="4,4" />
+            <text x={PL - 6} y={yv + 3.5} textAnchor="end" fontSize="8" fill={T.textMuted}
               fontFamily="'Noto Sans JP', sans-serif">{label}</text>
           </g>
         );
@@ -629,7 +606,7 @@ const SimForecastChart = ({ currentNet, personalNet, businessNet, target }: {
 
       {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(y => (
         <text key={y} x={xPos(y)} y={H - PB + 13} textAnchor="middle"
-          fontSize="8" fill={tokens.textMuted} fontFamily="'Noto Sans JP', sans-serif">
+          fontSize="8" fill={T.textMuted} fontFamily="'Noto Sans JP', sans-serif">
           {y === 0 ? "0年" : `${y}年`}
         </text>
       ))}
@@ -650,8 +627,8 @@ const SimForecastChart = ({ currentNet, personalNet, businessNet, target }: {
         return (
           <>
             <line x1={PL} y1={ty} x2={W - PR} y2={ty}
-              stroke={tokens.danger} strokeWidth="1.2" strokeDasharray="6,4" opacity="0.6" />
-            <text x={W - PR - 4} y={ty - 5} textAnchor="end" fontSize="10" fill={tokens.danger}
+              stroke={T.danger} strokeWidth="1.2" strokeDasharray="6,4" opacity="0.6" />
+            <text x={W - PR - 4} y={ty - 5} textAnchor="end" fontSize="10" fill={T.danger}
               fontFamily="'Noto Sans JP', sans-serif" fontWeight="500">目標</text>
           </>
         );
@@ -666,12 +643,12 @@ const SimForecastChart = ({ currentNet, personalNet, businessNet, target }: {
 
       {resolvedPaths.find(s => s.key === "mid")?.coords.map(([cx, cy], i) => (
         <circle key={i} cx={cx} cy={cy} r={i === 0 ? 5 : 3}
-          fill={i === 0 ? tokens.primary : tokens.surface}
-          stroke={tokens.primary} strokeWidth="1.5" />
+          fill={i === 0 ? T.primary : T.surface}
+          stroke={T.primary} strokeWidth="1.5" />
       ))}
 
       <text x={xPos(0) + 8} y={yPos(currentNet) - 8} fontSize="10"
-        fill={tokens.primary} fontFamily="'Noto Sans JP', sans-serif" fontWeight="600">現在</text>
+        fill={T.primary} fontFamily="'Noto Sans JP', sans-serif" fontWeight="600">現在</text>
     </svg>
   );
 };
@@ -711,7 +688,7 @@ const Dashboard = () => {
       {/* Heading */}
       <div style={{ marginBottom: 18 }}>
         <h1 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>ダッシュボード</h1>
-        <div style={{ fontSize: 12, color: tokens.textMuted, marginTop: 2 }}>
+        <div style={{ fontSize: 12, color: T.textMuted, marginTop: 2 }}>
           サマリー 現在値・{formatYM(TM)}
         </div>
       </div>
@@ -720,27 +697,27 @@ const Dashboard = () => {
       <div className="db-top">
         <div className="db-top-card">
           <div className="db-top-label">純資産合計</div>
-          <div className="db-top-value" style={{ color: tokens.teal }}>¥{fmt(cNet)}<span className="db-top-unit">万</span></div>
+          <div className="db-top-value" style={{ color: T.teal }}>¥{fmt(cNet)}<span className="db-top-unit">万</span></div>
           <div className="db-top-sub">個人 + 事業</div>
         </div>
         <div className="db-top-card">
           <div className="db-top-label">今月 収入</div>
-          <div className="db-top-value" style={{ color: tokens.primary }}>¥{fmt(cRev)}<span className="db-top-unit">万</span></div>
+          <div className="db-top-value" style={{ color: T.primary }}>¥{fmt(cRev)}<span className="db-top-unit">万</span></div>
           <div className={`db-top-sub ${revGrowth >= 0 ? "up" : "down"}`}>前月比 {fmtSign(revGrowth)}%</div>
         </div>
         <div className="db-top-card">
           <div className="db-top-label">今月 支出</div>
-          <div className="db-top-value" style={{ color: tokens.purple }}>¥{fmt(cCost)}<span className="db-top-unit">万</span></div>
+          <div className="db-top-value" style={{ color: T.purple }}>¥{fmt(cCost)}<span className="db-top-unit">万</span></div>
           <div className="db-top-sub">個人 + 事業</div>
         </div>
         <div className="db-top-card">
           <div className="db-top-label">目標達成率</div>
-          <div className="db-top-value" style={{ color: tokens.primary }}>{targetPct}<span className="db-top-unit">%</span></div>
+          <div className="db-top-value" style={{ color: T.primary }}>{targetPct}<span className="db-top-unit">%</span></div>
           <div className="db-top-sub">目標 ¥5,000万</div>
         </div>
         <div className="db-top-card">
           <div className="db-top-label">10年後予測</div>
-          <div className="db-top-value" style={{ color: tokens.teal }}>¥{fmt(tenYear)}<span className="db-top-unit">万</span></div>
+          <div className="db-top-value" style={{ color: T.teal }}>¥{fmt(tenYear)}<span className="db-top-unit">万</span></div>
           <div className="db-top-sub">年率5%想定</div>
         </div>
       </div>
@@ -775,20 +752,20 @@ const Dashboard = () => {
           <div className="db-col-stripe" />
           <div className="db-col-hdr">
             <div className="db-col-mode">個人</div>
-            <div className="db-col-net" style={{ color: tokens.teal }}>
-              ¥{fmt(pNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: tokens.textSecondary }}>万</span>
+            <div className="db-col-net" style={{ color: T.teal }}>
+              ¥{fmt(pNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: T.textSecondary }}>万</span>
             </div>
             <div className="db-col-net-label">純資産（資産 − 負債）</div>
           </div>
           <div className="db-rows">
-            <Row label="資産合計"  value={pAsset}  color={tokens.teal} />
-            <Row label="負債合計"  value={pLiab}   color={tokens.danger} />
-            <Row label="今月 収入" value={pRevTM}  color={tokens.primary} />
-            <Row label="今月 支出" value={pCostTM} color={tokens.purple} />
+            <Row label="資産合計"  value={pAsset}  color={T.teal} />
+            <Row label="負債合計"  value={pLiab}   color={T.danger} />
+            <Row label="今月 収入" value={pRevTM}  color={T.primary} />
+            <Row label="今月 支出" value={pCostTM} color={T.purple} />
           </div>
           <div className="db-row-profit">
             <span className="db-row-profit-label">収支差額</span>
-            <span className="db-row-profit-value" style={{ color: pProfit >= 0 ? tokens.teal : tokens.danger }}>
+            <span className="db-row-profit-value" style={{ color: pProfit >= 0 ? T.teal : T.danger }}>
               {fmtSign(pProfit)}万円
             </span>
           </div>
@@ -799,20 +776,20 @@ const Dashboard = () => {
           <div className="db-col-stripe" />
           <div className="db-col-hdr">
             <div className="db-col-mode">事業</div>
-            <div className="db-col-net" style={{ color: tokens.primary }}>
-              ¥{fmt(bNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: tokens.textSecondary }}>万</span>
+            <div className="db-col-net" style={{ color: T.primary }}>
+              ¥{fmt(bNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: T.textSecondary }}>万</span>
             </div>
             <div className="db-col-net-label">純資産（資産 − 負債）</div>
           </div>
           <div className="db-rows">
-            <Row label="資産合計"    value={bAsset}  color={tokens.teal} />
-            <Row label="負債合計"    value={bLiab}   color={tokens.danger} />
-            <Row label="今月 売上"   value={bRevTM}  color={tokens.primary} />
-            <Row label="今月 コスト" value={bCostTM} color={tokens.purple} />
+            <Row label="資産合計"    value={bAsset}  color={T.teal} />
+            <Row label="負債合計"    value={bLiab}   color={T.danger} />
+            <Row label="今月 売上"   value={bRevTM}  color={T.primary} />
+            <Row label="今月 コスト" value={bCostTM} color={T.purple} />
           </div>
           <div className="db-row-profit">
             <span className="db-row-profit-label">営業利益</span>
-            <span className="db-row-profit-value" style={{ color: bProfit >= 0 ? tokens.teal : tokens.danger }}>
+            <span className="db-row-profit-value" style={{ color: bProfit >= 0 ? T.teal : T.danger }}>
               {fmtSign(bProfit)}万円
             </span>
           </div>
@@ -824,19 +801,19 @@ const Dashboard = () => {
           <div className="db-col-hdr">
             <div className="db-col-mode">統合</div>
             <div className="db-col-net" style={{ color: "#BA7517" }}>
-              ¥{fmt(cNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: tokens.textSecondary }}>万</span>
+              ¥{fmt(cNet)}<span style={{ fontSize: 13, fontWeight: 400, marginLeft: 4, color: T.textSecondary }}>万</span>
             </div>
             <div className="db-col-net-label">純資産合計（個人 + 事業）</div>
           </div>
           <div className="db-rows">
-            <Row label="総資産合計"  value={cAsset} color={tokens.teal} />
-            <Row label="総負債合計"  value={cLiab}  color={tokens.danger} />
-            <Row label="今月 収入計" value={cRev}   color={tokens.primary} />
-            <Row label="今月 支出計" value={cCost}  color={tokens.purple} />
+            <Row label="総資産合計"  value={cAsset} color={T.teal} />
+            <Row label="総負債合計"  value={cLiab}  color={T.danger} />
+            <Row label="今月 収入計" value={cRev}   color={T.primary} />
+            <Row label="今月 支出計" value={cCost}  color={T.purple} />
           </div>
           <div className="db-row-profit">
             <span className="db-row-profit-label">収支差額</span>
-            <span className="db-row-profit-value" style={{ color: cProfit >= 0 ? tokens.teal : tokens.danger }}>
+            <span className="db-row-profit-value" style={{ color: cProfit >= 0 ? T.teal : T.danger }}>
               {fmtSign(cProfit)}万円
             </span>
           </div>
@@ -892,12 +869,12 @@ const Dashboard = () => {
         <div className="nw-metrics">
           {metrics.map(m => {
             const sign = m.delta >= 0 ? "+" : "";
-            const deltaColor = m.delta >= 0 ? tokens.success : tokens.danger;
+            const deltaColor = m.delta >= 0 ? T.success : T.danger;
             return (
               <div key={m.label} className="nw-metric">
                 <div className="nw-metric-label">{m.label}</div>
-                <div className="nw-metric-value" style={{ color: m.color }}>
-                  ¥{fmt(m.value)}<span style={{ fontSize: 11, fontWeight: 400, marginLeft: 3, color: tokens.textSecondary }}>万</span>
+                  <div className="nw-metric-value" style={{ color: m.color }}>
+                  ¥{fmt(m.value)}<span style={{ fontSize: 11, fontWeight: 400, marginLeft: 3, color: T.textSecondary }}>万</span>
                 </div>
                 <div className="nw-metric-delta" style={{ color: deltaColor }}>
                   {sign}{fmtShort(m.delta)} 前期比
@@ -921,10 +898,10 @@ const Dashboard = () => {
             <span className="db-badge info">平均シナリオ（年率5%）</span>
             <div className="nw-legend">
               {[
-                { label: "低成長（0%）", color: tokens.teal,    dash: false },
-                { label: "平均（3%）",   color: tokens.primary, dash: false },
-                { label: "高成長（6%）", color: tokens.purple,  dash: false },
-                { label: "目標ライン",   color: tokens.danger,  dash: true  },
+                { label: "低成長（0%）", color: T.teal,    dash: false },
+                { label: "平均（3%）",   color: T.primary, dash: false },
+                { label: "高成長（6%）", color: T.purple,  dash: false },
+                { label: "目標ライン",   color: T.danger,  dash: true  },
               ].map(l => (
                 <div key={l.label} className="nw-legend-item">
                   {l.dash
@@ -935,7 +912,7 @@ const Dashboard = () => {
               ))}
             </div>
           </div>
-          <span style={{ fontSize: 11, color: tokens.textMuted, flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: T.textMuted, flexShrink: 0 }}>
             目標 ¥{fmt(5000)}万 ／ 予測 ¥{fmt(tenYear)}万
           </span>
         </div>

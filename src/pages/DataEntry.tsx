@@ -1,26 +1,5 @@
 import { useState, useRef } from "react";
-
-// ── Design Tokens ────────────────────────────────────────────────
-const tokens = {
-  bg: "#F7F8FC",
-  surface: "#FFFFFF",
-  border: "#E5E7EF",
-  borderFocus: "#4F63E7",
-  primary: "#4F63E7",
-  primaryLight: "#EEF1FD",
-  primaryHover: "#3A4FC8",
-  teal: "#3CC9A0",
-  tealLight: "#E1F5EE",
-  purple: "#9B7EF8",
-  purpleLight: "#F0ECFE",
-  textPrimary: "#1C1E2E",
-  textSecondary: "#7A7D94",
-  textMuted: "#A8ABBA",
-  danger: "#E05252",
-  dangerLight: "#FEF0F0",
-  radius: "12px",
-  radiusSm: "8px",
-};
+import { T as tokens } from "../components/Authshared";
 
 // ── Types ────────────────────────────────────────────────────────
 type Mode    = "business" | "personal";

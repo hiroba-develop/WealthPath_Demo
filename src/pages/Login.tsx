@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   T, sharedCss, AuthLogo,
@@ -48,7 +48,10 @@ const Login = () => {
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       <div className="auth-page">
         <div className="auth-card">
-          <AuthLogo />
+          {/* ロゴを中央揃え */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 0 }}>
+            <AuthLogo />
+          </div>
 
           <h1 className="auth-title">ログイン</h1>
           <p className="auth-subtitle">メールアドレスとパスワードでログインしてください</p>
@@ -131,12 +134,7 @@ const Login = () => {
 
           <div className="auth-link-row">
             アカウントをお持ちでない方は
-            <Link
-                to="/register"
-                className="text-sm font-medium text-primary hover:text-primary/80 hover:underline"
-              >
-                <span className="auth-link"> 新規登録</span>
-              </Link>
+            <span className="auth-link" onClick={() => navigate("/register")}> 新規登録</span>
           </div>
         </div>
       </div>

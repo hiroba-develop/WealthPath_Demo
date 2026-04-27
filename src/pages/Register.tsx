@@ -124,18 +124,54 @@ const obCss = `
 `;
 
 // ── 型定義 ───────────────────────────────────────────────────────
+interface FixedCostRow {
+  id: string;
+  name: string;
+  memo: string;
+  amount: string;
+}
+
 interface BizEntry {
   id: string;
   name: string;
   type: string;
-  asset: string;
-  liab: string;
+  // 資産（内訳）
+  capital:      string;
+  deposit:      string;
+  equipment:    string;
+  // 負債
+  liab:         string;
+  // 売上モデル
+  customers:    string;
+  newCustomers: string;
+  unitPrice:    string;
+  // 固定費
+  fixedCosts:   FixedCostRow[];
 }
 
-const BIZ_TYPES = ["飲食・小売", "IT・コンサルティング", "製造・建設", "医療・介護", "不動産", "その他サービス"];
+const BIZ_TYPES = ["飲食・小売", "IT・コンサルティング", "製造・建設", "医療・介護", "不動産", "その他サービス"] as const;
+type BizType = typeof BIZ_TYPES[number];
+
+const VARIABLE_RATE: Record<BizType, { rate: number; desc: string }> = {
+  "飲食・小売":           { rate: 35, desc: "仕入・材料費が売上の約35%" },
+  "IT・コンサルティング": { rate: 15, desc: "外注費・ライセンスが売上の約15%" },
+  "製造・建設":           { rate: 45, desc: "材料費・外注費が売上の約45%" },
+  "医療・介護":           { rate: 20, desc: "消耗品・委託費が売上の約20%" },
+  "不動産":               { rate: 10, desc: "管理費・修繕費が売上の約10%" },
+  "その他サービス":       { rate: 25, desc: "外注・消耗品費が売上の約25%" },
+};
+
+function newFixedCost(): FixedCostRow {
+  return { id: crypto.randomUUID(), name: "", memo: "", amount: "" };
+}
 
 function newBiz(): BizEntry {
-  return { id: crypto.randomUUID(), name: "", type: "飲食・小売", asset: "", liab: "" };
+  return {
+    id: crypto.randomUUID(), name: "", type: "飲食・小売",
+    capital: "", deposit: "", equipment: "", liab: "",
+    customers: "", newCustomers: "", unitPrice: "",
+    fixedCosts: [newFixedCost()],
+  };
 }
 
 // ── 小コンポーネント ─────────────────────────────────────────────
@@ -198,8 +234,26 @@ function OnboardingModal({ onComplete }: { onComplete: () => void }) {
   const pNet = parseFloat(pCash||"0") + parseFloat(pInvest||"0") - parseFloat(pLiab||"0");
 
   // 事業の更新
-  function updateBiz(id: string, field: keyof BizEntry, value: string) {
+  function updateBiz(id: string, field: keyof Omit<BizEntry, "fixedCosts">, value: string) {
     setBusinesses(prev => prev.map(b => b.id === id ? { ...b, [field]: value } : b));
+  }
+  function updateFixed(bizId: string, rowId: string, field: keyof FixedCostRow, value: string) {
+    setBusinesses(prev => prev.map(b => b.id === bizId
+      ? { ...b, fixedCosts: b.fixedCosts.map(r => r.id === rowId ? { ...r, [field]: value } : r) }
+      : b
+    ));
+  }
+  function addFixed(bizId: string) {
+    setBusinesses(prev => prev.map(b => b.id === bizId
+      ? { ...b, fixedCosts: [...b.fixedCosts, newFixedCost()] }
+      : b
+    ));
+  }
+  function removeFixed(bizId: string, rowId: string) {
+    setBusinesses(prev => prev.map(b => b.id === bizId
+      ? { ...b, fixedCosts: b.fixedCosts.length > 1 ? b.fixedCosts.filter(r => r.id !== rowId) : b.fixedCosts }
+      : b
+    ));
   }
   function addBiz() { setBusinesses(prev => [...prev, newBiz()]); }
   function removeBiz(id: string) {
@@ -235,7 +289,7 @@ function OnboardingModal({ onComplete }: { onComplete: () => void }) {
             <>
               <div className="ob-sec-title">
                 <span className="ob-dot" style={{ background: T.teal }} />
-                個人資産の概算（万円）
+                個人資産
               </div>
               <div className="ob-grid2">
                 <OInput label="現金・預金" placeholder="300" value={pCash} onChange={setPCash}
@@ -244,6 +298,10 @@ function OnboardingModal({ onComplete }: { onComplete: () => void }) {
                   suffix="万円" hint="株・投信・iDeCoなど" />
               </div>
               <div style={{ marginTop: 14 }}>
+                <div className="ob-sec-title">
+                  <span className="ob-dot" style={{ background: T.danger }} />
+                  個人負債
+                </div>
                 <OInput label="負債（ローン等）" placeholder="0" value={pLiab} onChange={setPLiab}
                   suffix="万円" hint="住宅ローン・奨学金など" />
               </div>
@@ -251,6 +309,9 @@ function OnboardingModal({ onComplete }: { onComplete: () => void }) {
                 <span style={{ fontWeight: 600, color: T.primary }}>個人純資産: </span>
                 <span style={{ fontWeight: 700, color: pNet >= 0 ? T.primary : T.danger }}>
                   {pNet.toLocaleString("ja-JP")}万円
+                </span>
+                <span style={{ fontSize: 11, color: T.textMuted, marginLeft: 8 }}>
+                  （資産 {(parseFloat(pCash||"0")+parseFloat(pInvest||"0")).toLocaleString("ja-JP")}万 − 負債 {parseFloat(pLiab||"0").toLocaleString("ja-JP")}万）
                 </span>
               </div>
             </>
@@ -269,7 +330,6 @@ function OnboardingModal({ onComplete }: { onComplete: () => void }) {
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {businesses.map((biz, idx) => {
-                  const bNet = parseFloat(biz.asset||"0") - parseFloat(biz.liab||"0");
                   return (
                     <div key={biz.id} className="ob-biz-card">
                       <div className="ob-biz-card-hdr">
@@ -296,22 +356,149 @@ function OnboardingModal({ onComplete }: { onComplete: () => void }) {
                           <OInput label="事業名" placeholder="例: カフェ経営"
                             value={biz.name} onChange={v => updateBiz(biz.id, "name", v)} />
                           <OSelect label="業種" value={biz.type}
-                            onChange={v => updateBiz(biz.id, "type", v)} options={BIZ_TYPES} />
+                            onChange={v => updateBiz(biz.id, "type", v)} options={[...BIZ_TYPES]} />
+                        </div>
+
+                        {/* 事業資産 */}
+                        <div className="ob-sec-title" style={{ marginTop: 10 }}>
+                          <span className="ob-dot" style={{ background: T.teal }} />事業資産
                         </div>
                         <div className="ob-grid2">
-                          <OInput label="事業資産合計" placeholder="50"
-                            value={biz.asset} onChange={v => updateBiz(biz.id, "asset", v)}
-                            suffix="万円" hint="設備・運転資金など" />
-                          <OInput label="事業負債合計" placeholder="0"
-                            value={biz.liab} onChange={v => updateBiz(biz.id, "liab", v)}
-                            suffix="万円" hint="事業ローン等" />
+                          <OInput label="資本金・元手" placeholder="100"
+                            value={biz.capital} onChange={v => updateBiz(biz.id, "capital", v)}
+                            suffix="万円" hint="設立時の出資額・個人事業の元手" />
+                          <OInput label="事業用預金" placeholder="50"
+                            value={biz.deposit} onChange={v => updateBiz(biz.id, "deposit", v)}
+                            suffix="万円" hint="事業口座の現在残高" />
                         </div>
-                        <div className="ob-net" style={{ background: T.tealLight }}>
-                          <span style={{ fontWeight: 600, color: T.teal }}>純資産: </span>
-                          <span style={{ fontWeight: 700, color: bNet >= 0 ? T.teal : T.danger }}>
-                            {bNet.toLocaleString("ja-JP")}万円
-                          </span>
+                        <OInput label="設備・機材" placeholder="0"
+                          value={biz.equipment} onChange={v => updateBiz(biz.id, "equipment", v)}
+                          suffix="万円" hint="店舗設備・PC・機材など" />
+
+                        {/* 事業負債 */}
+                        <div className="ob-sec-title" style={{ marginTop: 10 }}>
+                          <span className="ob-dot" style={{ background: T.danger }} />事業負債
                         </div>
+                        <OInput label="事業用ローン・買掛金" placeholder="0"
+                          value={biz.liab} onChange={v => updateBiz(biz.id, "liab", v)}
+                          suffix="万円" hint="設備投資ローン・未払い仕入れ代など" />
+                        {(() => {
+                          const asset = parseFloat(biz.capital||"0") + parseFloat(biz.deposit||"0") + parseFloat(biz.equipment||"0");
+                          const liab  = parseFloat(biz.liab||"0");
+                          const net   = asset - liab;
+                          return (
+                            <div className="ob-net" style={{ background: T.tealLight }}>
+                              <span style={{ fontWeight: 600, color: T.teal }}>事業純資産: </span>
+                              <span style={{ fontWeight: 700, color: net >= 0 ? T.teal : T.danger }}>
+                                {net.toLocaleString("ja-JP")}万円
+                              </span>
+                              <span style={{ fontSize: 11, color: T.textMuted, marginLeft: 8 }}>
+                                （資産 {asset.toLocaleString("ja-JP")}万 − 負債 {liab.toLocaleString("ja-JP")}万）
+                              </span>
+                            </div>
+                          );
+                        })()}
+
+                        {/* 売上モデル */}
+                        <div className="ob-sec-title" style={{ marginTop: 10 }}>
+                          <span className="ob-dot" style={{ background: T.primary }} />売上モデル
+                        </div>
+                        <div className="ob-grid2">
+                          <OInput label="現在の顧客数" placeholder="100"
+                            value={biz.customers} onChange={v => updateBiz(biz.id, "customers", v)}
+                            suffix="人" />
+                          <OInput label="月間増加顧客数" placeholder="5"
+                            value={biz.newCustomers} onChange={v => updateBiz(biz.id, "newCustomers", v)}
+                            suffix="人" />
+                        </div>
+                        <div className="ob-grid2">
+                          <OInput label="顧客平均単価" placeholder="0.5"
+                            value={biz.unitPrice} onChange={v => updateBiz(biz.id, "unitPrice", v)}
+                            suffix="万円" hint="月あたりの1顧客の平均売上" />
+                          <div>
+                            <label className="ob-label">自動計算結果（月次売上）</label>
+                            <div className="ob-input-wrap">
+                              <input className="ob-input has-suffix"
+                                readOnly
+                                value={(() => {
+                                  const c = parseFloat(biz.customers||"0");
+                                  const p = parseFloat(biz.unitPrice||"0");
+                                  return (c && p) ? (c * p).toLocaleString("ja-JP") + " 万円" : "";
+                                })()}
+                                placeholder="顧客数 × 単価で自動計算"
+                                style={{ background: T.bg, color: T.textSecondary }}
+                              />
+                            </div>
+                            <div className="ob-hint">顧客数 × 顧客平均単価</div>
+                          </div>
+                        </div>
+
+                        {/* 固定費 */}
+                        <div className="ob-sec-title" style={{ marginTop: 10 }}>
+                          <span className="ob-dot" style={{ background: T.purple }} />固定費
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {biz.fixedCosts.map((row, fi) => (
+                            <div key={row.id} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "10px 12px" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                                <span style={{ fontSize: 11.5, fontWeight: 600, color: T.textMuted }}>項目 {fi + 1}</span>
+                                {biz.fixedCosts.length > 1 && (
+                                  <button onClick={() => removeFixed(biz.id, row.id)}
+                                    style={{ fontSize: 11.5, color: T.danger, border: "none", background: "none", cursor: "pointer", padding: "2px 6px", borderRadius: 4, fontFamily: "'Noto Sans JP', sans-serif" }}>
+                                    削除
+                                  </button>
+                                )}
+                              </div>
+                              <div className="ob-grid2" style={{ marginBottom: 8 }}>
+                                <OInput label="項目名" placeholder="家賃、人件費 など"
+                                  value={row.name} onChange={v => updateFixed(biz.id, row.id, "name", v)} />
+                                <OInput label="内容" placeholder="補足・詳細"
+                                  value={row.memo} onChange={v => updateFixed(biz.id, row.id, "memo", v)} />
+                              </div>
+                              <OInput label="金額" placeholder="0"
+                                value={row.amount} onChange={v => updateFixed(biz.id, row.id, "amount", v)}
+                                suffix="万円" />
+                            </div>
+                          ))}
+                        </div>
+                        <button onClick={() => addFixed(biz.id)}
+                          style={{
+                            marginTop: 8, width: "100%", height: 32,
+                            border: `1px dashed ${T.borderMid}`, borderRadius: T.radiusSm,
+                            background: "none", cursor: "pointer", fontSize: 12,
+                            color: T.primary, fontFamily: "'Noto Sans JP', sans-serif",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                          }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                          追加
+                        </button>
+
+                        {/* 変動費率（業種から自動設定） */}
+                        <div className="ob-sec-title" style={{ marginTop: 10 }}>
+                          <span className="ob-dot" style={{ background: T.amber ?? "#EF9F27" }} />変動費率
+                          <span style={{ fontSize: 10.5, color: T.textMuted, fontWeight: 400, marginLeft: 4 }}>業種から自動設定</span>
+                        </div>
+                        {(() => {
+                          const vrate = VARIABLE_RATE[biz.type as BizType] ?? VARIABLE_RATE["その他サービス"];
+                          return (
+                            <>
+                              <div style={{
+                                display: "inline-flex", alignItems: "center", gap: 6,
+                                padding: "8px 14px", borderRadius: T.radiusSm,
+                                background: T.primaryLight, border: "1px solid #C5CFF7",
+                              }}>
+                                <span style={{ fontSize: 22, fontWeight: 700, color: T.primary, letterSpacing: -0.5 }}>{vrate.rate}</span>
+                                <span style={{ fontSize: 13, color: T.textSecondary }}>%</span>
+                              </div>
+                              <div style={{ fontSize: 11.5, color: T.textSecondary, marginTop: 4 }}>{vrate.desc}</div>
+                              <div style={{ fontSize: 11, color: T.textMuted, marginTop: 4 }}>
+                                ※ 業種を変更すると自動で更新されます
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   );

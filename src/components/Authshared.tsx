@@ -1,5 +1,4 @@
-//import { useState } from "react";
-
+import logo from "../assets/WealthPath.svg";
 // ── Design Tokens ────────────────────────────────────────────────
 export const T = {
   bg: "#F7F8FC",
@@ -12,14 +11,19 @@ export const T = {
   primaryHover: "#3A4FC8",
   teal: "#3CC9A0",
   tealLight: "#E1F5EE",
+  tealDark: "#0F6E56",
   purple: "#9B7EF8",
   purpleLight: "#F0ECFE",
+  amber: "#EF9F27",
+  amberLight: "#FAEEDA",
+  amberDark: "#BA7517",
   textPrimary: "#1C1E2E",
   textSecondary: "#7A7D94",
   textMuted: "#A8ABBA",
   danger: "#E05252",
   dangerLight: "#FEF0F0",
   warning: "#F59E0B",
+  warningLight: "#FEF3C7",
   success: "#10B981",
   successLight: "#ECFDF5",
   radius: "12px",
@@ -213,8 +217,10 @@ export function pwStrength(v: string): { level: number; label: string; color: st
 export function AuthLogo() {
   return (
     <div className="auth-logo">
-      <span className="text-2xl mr-2">💎</span>
-      <span className="text-xl font-bold text-blue-600">WealthPath</span>
+      <div style={{ textAlign: "center" }}>
+        <img src={logo} alt="WealthPath" className="h-10 w-auto" />
+        <div className="auth-logo-sub">個人・事業の資産管理</div>
+      </div>
     </div>
   );
 }
