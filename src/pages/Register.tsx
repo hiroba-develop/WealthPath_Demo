@@ -595,8 +595,9 @@ export default function Register() {
       <style>{sharedCss + obCss}</style>
       <div className="auth-page">
         <div className="auth-card">
-          <AuthLogo />
-
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 0 }}>
+            <AuthLogo />
+          </div>
           <h1 className="auth-title">新規登録</h1>
           <p className="auth-subtitle">アカウントを作成して資産管理をはじめましょう</p>
 
