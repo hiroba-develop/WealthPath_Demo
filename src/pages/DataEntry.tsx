@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { T as tokens } from "../components/Authshared";
+import { useFixedCost, type FixedCostMaster, PERSONAL_BIZ_ID } from "../contexts/Fixedcostcontext";
 
 // ── Types ────────────────────────────────────────────────────────
 type Mode    = "business" | "personal";
@@ -15,7 +16,11 @@ interface Entry {
   amount: string;
   yield_rate: string;
   memo: string;
+  isAuto?: boolean;   // 自動生成フラグ（仮・未確定）
+  autoId?: string;    // 固定費マスタのID（重複生成防止用）
 }
+
+// FixedCostMaster 型は FixedCostContext から import
 
 // ── Styles ───────────────────────────────────────────────────────
 const css = `
@@ -101,6 +106,25 @@ const css = `
   .de-badge-asset     { background: ${tokens.tealLight};   color: #0F6E56; }
   .de-badge-revenue   { background: ${tokens.primaryLight}; color: ${tokens.primary}; }
   .de-badge-cost      { background: ${tokens.purpleLight}; color: #7B50D6; }
+  /* 自動生成バッジ */
+  .de-badge-auto {
+    font-size: 10.5px; font-weight: 500; padding: 1px 7px; border-radius: 20px;
+    background: ${tokens.bg}; color: ${tokens.textMuted};
+    border: 1px solid ${tokens.border};
+  }
+
+  /* 自動生成バナー */
+  .de-auto-banner {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px; background: #FFFBEB; border-bottom: 1px solid #F5C87A;
+    font-size: 12px; color: #7A4A00;
+  }
+  .de-auto-banner-title { font-weight: 600; margin-bottom: 2px; }
+  .de-auto-banner-sub { font-size: 11px; color: #9A6010; line-height: 1.6; }
+
+  /* 自動生成行のスタイル */
+  .de-row-item.is-auto { background: #FFFDF5; }
+  .de-row-item.is-auto:hover { background: #FFF8E6; }
 
   .de-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .de-list-title { font-size: 14px; font-weight: 600; color: ${tokens.textPrimary}; }
@@ -128,7 +152,7 @@ const css = `
   .de-row-item:hover { background: ${tokens.bg}; }
   .de-row-bar { width: 4px; height: 38px; border-radius: 3px; flex-shrink: 0; }
   .de-row-info { flex: 1; min-width: 0; }
-  .de-row-content { font-size: 13.5px; font-weight: 500; color: ${tokens.textPrimary}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .de-row-content { font-size: 13.5px; font-weight: 500; color: ${tokens.textPrimary}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
   .de-row-sub { font-size: 11.5px; color: ${tokens.textMuted}; margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .de-row-due { color: ${tokens.danger}; }
   .de-row-yield { color: ${tokens.teal}; font-weight: 500; }
@@ -156,6 +180,33 @@ const css = `
   .de-detail-key { font-size: 12px; font-weight: 500; color: ${tokens.textSecondary}; width: 72px; flex-shrink: 0; padding-top: 2px; }
   .de-detail-val { font-size: 13.5px; color: ${tokens.textPrimary}; flex: 1; }
   .de-detail-amount { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+
+  /* 固定費チェックボックス */
+  .de-fixed-check-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: ${tokens.radiusSm};
+    background: ${tokens.bg}; border: 1px solid ${tokens.border};
+    cursor: pointer; transition: background 0.12s, border-color 0.12s;
+    user-select: none;
+  }
+  .de-fixed-check-row:hover { background: ${tokens.primaryLight}; border-color: #C5CFF7; }
+  .de-fixed-check-row.checked { background: ${tokens.primaryLight}; border-color: ${tokens.primary}; }
+  .de-fixed-check-row input[type="checkbox"] { width: 15px; height: 15px; accent-color: ${tokens.primary}; cursor: pointer; flex-shrink: 0; }
+  .de-fixed-check-label { font-size: 13px; font-weight: 500; color: ${tokens.textSecondary}; }
+  .de-fixed-check-row.checked .de-fixed-check-label { color: ${tokens.primary}; }
+  .de-fixed-period-box {
+    padding: 14px; border-radius: ${tokens.radiusSm};
+    background: ${tokens.primaryLight}; border: 1px solid #C5CFF7;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .de-hint { font-size: 11px; color: ${tokens.textMuted}; margin-top: 4px; }
+
+  /* 文字数カウンター */
+  .de-char-count { font-size: 10.5px; margin-top: 3px; text-align: right; }
+  .de-char-count.ok   { color: ${tokens.textMuted}; }
+  .de-char-count.warn { color: #E8921A; }
+  .de-char-count.over { color: ${tokens.danger}; font-weight: 600; }
 
   .de-toast { position: fixed; bottom: 24px; right: 24px; color: white; padding: 10px 16px; border-radius: ${tokens.radiusSm}; font-size: 13px; display: flex; align-items: center; gap: 8px; z-index: 1000; animation: deSlideUp 0.2s ease; box-shadow: 0 4px 12px rgba(28,30,46,0.2); }
 
@@ -258,6 +309,11 @@ const BuildingIcon = () => (
     <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
   </svg>
 );
+const SparkleIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
+  </svg>
+);
 
 // ── Constants ────────────────────────────────────────────────────
 const BUSINESS_OPTIONS = ["A事業", "Bコンサルティング", "その他"];
@@ -280,6 +336,26 @@ const summaryBase: { tab: DataTab; label: string; dotColor: string }[] = [
   { tab: "revenue",   label: "売上",   dotColor: tokens.primary },
   { tab: "cost",      label: "コスト", dotColor: tokens.purple },
 ];
+
+// ── 入力制御ユーティリティ ────────────────────────────────────────
+
+/** 金額入力（整数6桁＋小数1桁、例: 999999.9） */
+function sanitizeAmount(v: string): string {
+  let s = v.replace(/[^\d.]/g, "");
+  const parts = s.split(".");
+  if (parts.length > 2) s = parts[0] + "." + parts.slice(1).join("");
+  const [intPart, decPart] = s.split(".");
+  const trimInt = (intPart ?? "").slice(0, 6);
+  if (decPart === undefined) return trimInt;
+  return trimInt + "." + decPart.slice(0, 1);
+}
+
+/** 文字数カウンタークラス */
+function charCountClass(len: number, max: number): string {
+  if (len > max) return "over";
+  if (len >= max * 0.9) return "warn";
+  return "ok";
+}
 
 // ── Helpers ──────────────────────────────────────────────────────
 function emptyEntry(tab: DataTab): Entry {
@@ -308,40 +384,76 @@ function parseAmount(s: string): number {
   return parseInt(s.replace(/,/g, ""), 10) || 0;
 }
 
+/**
+ * 固定費マスタから当月の自動生成エントリを作成する
+ * - start_date が設定されている場合、当月が start_date の月以降のみ生成
+ * - end_date   が設定されている場合、当月が end_date   の月以前のみ生成（月途中終了は当月生成）
+ * - autoId で重複チェックに使う（同じ月に同じ固定費を2重生成しない）
+ */
+function isInPeriod(ym: string, start_date: string, end_date: string): boolean {
+  // ym は "YYYY-MM" 形式
+  if (start_date) {
+    const startYM = start_date.slice(0, 7); // "YYYY-MM"
+    if (ym < startYM) return false;
+  }
+  if (end_date) {
+    const endYM = end_date.slice(0, 7); // "YYYY-MM"（月途中終了でも当月は生成）
+    if (ym > endYM) return false;
+  }
+  return true;
+}
+
+function generateAutoEntries(ym: string, masters: FixedCostMaster[], targetMode: "business" | "personal"): Entry[] {
+  return masters
+    .filter(m => {
+      if (targetMode === "business") return m.bizId !== PERSONAL_BIZ_ID;
+      return m.bizId === PERSONAL_BIZ_ID;
+    })
+    .filter(m => isInPeriod(ym, m.start_date, m.end_date))
+    .map(m => ({
+      id: crypto.randomUUID(),
+      tab: "cost" as DataTab,
+      business: m.bizId === PERSONAL_BIZ_ID ? "" : m.bizId,
+      content: m.name,
+      occurred_at: `${ym}-01`,
+      due_at: "",
+      amount: m.amount,
+      yield_rate: "",
+      memo: "",
+      isAuto: true,
+      autoId: `${ym}-${m.id}`,
+    }));
+}
+
+// localStorage キー（業種別・個人別）
+const LS_LAST_LOGIN_MONTH_BUSINESS = "de_lastLoginMonth_business";
+const LS_LAST_LOGIN_MONTH_PERSONAL = "de_lastLoginMonth_personal";
+
 // ── Sample Data ──────────────────────────────────────────────────
-// Dashboard と整合:
-//   個人 今月: 資産360万(180+95+55+30) − 負債130万(90+40) = 純資産230万
-//              ※サービス開始時(3月)は300万、4月は給与等で増減
-//   事業 今月: 資産80万(50+30) − 負債50万(45+5) = 純資産30万（立ち上げ期）
 const TM  = currentYM();
 const PM  = shiftYM(TM, -1);
 const PM2 = shiftYM(TM, -2);
 
-// ── 事業用サンプル ────────────────────────────────────────────────
 const BUSINESS_SAMPLE_ENTRIES: Entry[] = [
-  // 今月 — 資産80万・負債50万 → 純資産30万
   { id:"b01", tab:"asset",     business:"A事業",            content:"運転資金（普通預金）",  occurred_at:`${TM}-01`, due_at:"",                     amount:"50",  yield_rate:"", memo:"" },
   { id:"b02", tab:"asset",     business:"Bコンサルティング", content:"業務用PC・機材",        occurred_at:`${TM}-05`, due_at:"",                     amount:"30",  yield_rate:"", memo:"MacBook Pro×2台" },
   { id:"b03", tab:"liability", business:"A事業",            content:"開業準備ローン",         occurred_at:`${TM}-01`, due_at:`${shiftYM(TM,36)}-01`, amount:"45",  yield_rate:"", memo:"金利1.5%" },
   { id:"b04", tab:"liability", business:"Bコンサルティング", content:"事業用クレジット残高",   occurred_at:`${TM}-15`, due_at:`${shiftYM(TM,1)}-25`,  amount:"5",   yield_rate:"", memo:"" },
   { id:"b05", tab:"revenue",   business:"A事業",            content:"店舗売上（今月）",       occurred_at:`${TM}-30`, due_at:"",                     amount:"18",  yield_rate:"", memo:"初月" },
   { id:"b06", tab:"revenue",   business:"Bコンサルティング", content:"C社 初回顧問料",         occurred_at:`${TM}-20`, due_at:"",                     amount:"10",  yield_rate:"", memo:"" },
-  { id:"b07", tab:"cost",      business:"A事業",            content:"仕入原価",               occurred_at:`${TM}-30`, due_at:"",                     amount:"8",   yield_rate:"", memo:"" },
-  { id:"b08", tab:"cost",      business:"A事業",            content:"家賃（店舗）",           occurred_at:`${TM}-01`, due_at:"",                     amount:"6",   yield_rate:"", memo:"" },
-  { id:"b09", tab:"cost",      business:"Bコンサルティング", content:"SaaS各種サブスク",       occurred_at:`${TM}-01`, due_at:"",                     amount:"2",   yield_rate:"", memo:"Notion, Slack等" },
-  // 先月（開業準備中）
+  // 今月のコストは自動生成で表示するため手動サンプルは先月以前のみ
   { id:"b10", tab:"asset",     business:"A事業",            content:"運転資金（普通預金）",   occurred_at:`${PM}-01`, due_at:"",                     amount:"55",  yield_rate:"", memo:"" },
   { id:"b11", tab:"asset",     business:"Bコンサルティング", content:"業務用PC・機材",         occurred_at:`${PM}-05`, due_at:"",                     amount:"30",  yield_rate:"", memo:"" },
   { id:"b12", tab:"liability", business:"A事業",            content:"開業準備ローン",          occurred_at:`${PM}-01`, due_at:`${shiftYM(TM,36)}-01`, amount:"47",  yield_rate:"", memo:"金利1.5%" },
   { id:"b13", tab:"revenue",   business:"A事業",            content:"店舗売上（先月）",        occurred_at:`${PM}-31`, due_at:"",                     amount:"8",   yield_rate:"", memo:"プレオープン" },
   { id:"b14", tab:"cost",      business:"A事業",            content:"開業準備費用",            occurred_at:`${PM}-15`, due_at:"",                     amount:"12",  yield_rate:"", memo:"内装・備品" },
   { id:"b15", tab:"cost",      business:"Bコンサルティング", content:"SaaS各種サブスク",        occurred_at:`${PM}-01`, due_at:"",                     amount:"2",   yield_rate:"", memo:"" },
+  { id:"b16", tab:"cost",      business:"A事業",            content:"家賃（店舗）",            occurred_at:`${PM}-01`, due_at:"",                     amount:"6",   yield_rate:"", memo:"" },
+  { id:"b17", tab:"cost",      business:"A事業",            content:"仕入原価",                occurred_at:`${PM}-30`, due_at:"",                     amount:"8",   yield_rate:"", memo:"" },
 ];
 
-// ── 個人用サンプル ────────────────────────────────────────────────
 const PERSONAL_SAMPLE_ENTRIES: Entry[] = [
-  // 今月 — 資産360万(180+95+55+30) − 負債130万(90+40) = 純資産230万
-  { id:"p01", tab:"asset",     business:"", content:"楽天銀行 普通預金",            occurred_at:`${TM}-05`, due_at:"",                     amount:"180", yield_rate:"0.1", memo:"サービス開始時の元手" },
+  { id:"p01", tab:"asset",     business:"", content:"楽天銀行 普通預金",            occurred_at:`${TM}-05`, due_at:"",                     amount:"180", yield_rate:"0.1", memo:"" },
   { id:"p02", tab:"asset",     business:"", content:"SBI証券 S&P500インデックス",    occurred_at:`${TM}-10`, due_at:"",                     amount:"95",  yield_rate:"7.0", memo:"積立中" },
   { id:"p03", tab:"asset",     business:"", content:"iDeCo 全世界株式",              occurred_at:`${TM}-25`, due_at:"",                     amount:"55",  yield_rate:"5.5", memo:"" },
   { id:"p04", tab:"asset",     business:"", content:"外貨預金（USD）",               occurred_at:`${TM}-15`, due_at:"",                     amount:"30",  yield_rate:"1.5", memo:"150円換算" },
@@ -349,9 +461,7 @@ const PERSONAL_SAMPLE_ENTRIES: Entry[] = [
   { id:"p06", tab:"liability", business:"", content:"カーローン",                    occurred_at:`${TM}-15`, due_at:`${shiftYM(TM,30)}-15`, amount:"40",  yield_rate:"",    memo:"残り2.5年" },
   { id:"p07", tab:"revenue",   business:"", content:"給与（今月）",                  occurred_at:`${TM}-25`, due_at:"",                     amount:"28",  yield_rate:"",    memo:"" },
   { id:"p08", tab:"revenue",   business:"", content:"副業 Webライティング",           occurred_at:`${TM}-20`, due_at:"",                     amount:"4",   yield_rate:"",    memo:"" },
-  { id:"p09", tab:"cost",      business:"", content:"家賃",                          occurred_at:`${TM}-01`, due_at:"",                     amount:"7",   yield_rate:"",    memo:"" },
-  { id:"p10", tab:"cost",      business:"", content:"生命保険・医療保険",             occurred_at:`${TM}-05`, due_at:"",                     amount:"2",   yield_rate:"",    memo:"" },
-  // 先月 — 純資産約317万（3月スタート時の300万から微増）
+  // p09/p10（家賃・保険料）は固定費マスタから自動生成されるためサンプルデータから除外
   { id:"p11", tab:"asset",     business:"", content:"楽天銀行 普通預金",             occurred_at:`${PM}-05`, due_at:"",                     amount:"168", yield_rate:"0.1", memo:"" },
   { id:"p12", tab:"asset",     business:"", content:"SBI証券 S&P500インデックス",    occurred_at:`${PM}-10`, due_at:"",                     amount:"90",  yield_rate:"7.0", memo:"" },
   { id:"p13", tab:"asset",     business:"", content:"iDeCo 全世界株式",              occurred_at:`${PM}-25`, due_at:"",                     amount:"52",  yield_rate:"5.5", memo:"" },
@@ -361,8 +471,7 @@ const PERSONAL_SAMPLE_ENTRIES: Entry[] = [
   { id:"p17", tab:"revenue",   business:"", content:"給与（先月）",                  occurred_at:`${PM}-25`, due_at:"",                     amount:"28",  yield_rate:"",    memo:"" },
   { id:"p18", tab:"cost",      business:"", content:"家賃",                          occurred_at:`${PM}-01`, due_at:"",                     amount:"7",   yield_rate:"",    memo:"" },
   { id:"p19", tab:"cost",      business:"", content:"食費・日用品",                  occurred_at:`${PM}-31`, due_at:"",                     amount:"5",   yield_rate:"",    memo:"" },
-  // 2ヶ月前
-  { id:"p20", tab:"cost",      business:"", content:"年間保険料（一括）",             occurred_at:`${PM2}-05`, due_at:"",                    amount:"8",   yield_rate:"",    memo:"" },
+  { id:"p20", tab:"cost",      business:"", content:"年間保険料（一括）",             occurred_at:`${PM2}-05`, due_at:"",                   amount:"8",   yield_rate:"",    memo:"" },
 ];
 
 // ── Component ────────────────────────────────────────────────────
@@ -371,10 +480,24 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
   const thisYM    = currentYM();
   const sampleEntries = mode === "business" ? BUSINESS_SAMPLE_ENTRIES : PERSONAL_SAMPLE_ENTRIES;
 
-  const [activeTab,     setActiveTab]     = useState<DataTab>("asset");
-  const [form,          setForm]          = useState<Entry>(emptyEntry("asset"));
+  const { masters, addMaster } = useFixedCost();
+
+  const [activeTab,     setActiveTab]     = useState<DataTab>("cost");
+  const [form,          setForm]          = useState<Entry>(emptyEntry("cost"));
   const [formOpen,      setFormOpen]      = useState(true);
   const [entries,       setEntries]       = useState<Entry[]>(sampleEntries);
+
+  // 固定費チェックボックス用 state
+  const [isFixed,       setIsFixed]       = useState(false);
+  const [fixedStartDate, setFixedStartDate] = useState("");
+  const [fixedEndDate,   setFixedEndDate]   = useState("");
+
+  // ── 自動生成エントリ（未確定・state のみ・DB未保存）────────────
+  // useState の初期値で生成することで初回レンダー時から即表示される
+  const [autoEntries,   setAutoEntries]   = useState<Entry[]>(() =>
+    generateAutoEntries(thisYM, masters, mode)
+  );
+
   const [viewMonth,     setViewMonth]     = useState<string>(thisYM);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [isEditing,     setIsEditing]     = useState(false);
@@ -384,52 +507,167 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
 
   const isCurrentMonth = viewMonth === thisYM;
 
+  // ── 月初ログイン時に lastLoginMonth を更新 ────────────────────
+  useEffect(() => {
+    const key = mode === "business" ? LS_LAST_LOGIN_MONTH_BUSINESS : LS_LAST_LOGIN_MONTH_PERSONAL;
+    localStorage.setItem(key, thisYM);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── masters が変わったとき（固定費追加・削除）autoEntries を再生成 ──
+  useEffect(() => {
+    setAutoEntries(prev => {
+      // 別modeのエントリが混入していた場合は除去
+      const prevFiltered = prev.filter(e =>
+        mode === "personal"
+          ? e.business === ""   // 個人: business が空のもののみ
+          : e.business !== ""   // 事業: business がある（PERSONAL_BIZ_ID 由来でない）もののみ
+      );
+      const newAutos = generateAutoEntries(thisYM, masters, mode);
+
+      // 除外1: すでに確定済み（entriesに移動済み）のもの
+      const confirmedAutoIds = new Set(
+        entries.filter(e => e.autoId).map(e => e.autoId as string)
+      );
+      // 除外2: 今月すでに手動でコスト登録されているマスタID（今月は手動登録を優先）
+      const manuallyRegisteredMasterIds = new Set(
+        entries
+          .filter(e => e.tab === "cost" && !e.isAuto && (toYM(e.occurred_at) || thisYM) === thisYM)
+          .map(e => masters.find(m => m.name === e.content && m.bizId === e.business)?.id)
+          .filter(Boolean) as string[]
+      );
+
+      const filtered = newAutos.filter(e => {
+        if (confirmedAutoIds.has(e.autoId!)) return false;
+        // autoId は `${ym}-${masterId}` 形式なので masterId を取り出す
+        const masterId = e.autoId?.replace(`${thisYM}-`, "");
+        if (masterId && manuallyRegisteredMasterIds.has(masterId)) return false;
+        return true;
+      });
+
+      // 既存の未確定分は保持しつつ、新しいマスタ分だけ追加
+      const existingIds = new Set(prevFiltered.map(e => e.autoId));
+      const toAdd = filtered.filter(e => !existingIds.has(e.autoId));
+      // 削除されたマスタに対応する autoEntry は除去
+      const validAutoIds = new Set(filtered.map(e => e.autoId));
+      const kept = prevFiltered.filter(e => validAutoIds.has(e.autoId));
+      return [...kept, ...toAdd];
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [masters]);
+
   function showToast(msg: string, type = "success") {
     setToast({ msg, type });
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 2500);
   }
-  function handleTabChange(tab: DataTab) { setActiveTab(tab); setForm(emptyEntry(tab)); }
+
+  function handleTabChange(tab: DataTab) {
+    setActiveTab(tab);
+    setForm(emptyEntry(tab));
+    setIsFixed(false);
+    setFixedStartDate("");
+    setFixedEndDate("");
+  }
   function handlePrevMonth() { setViewMonth(shiftYM(viewMonth, -1)); setFormOpen(false); }
   function handleNextMonth() {
     const m = shiftYM(viewMonth, 1);
     setViewMonth(m);
     if (m === thisYM) setFormOpen(true);
   }
+
+  // 自動生成エントリを1件だけ確定（モーダルの「保存する」用）
+  function handleConfirmAutoEntry(entry: Entry) {
+    setEntries(prev => [{ ...entry, isAuto: false }, ...prev]);
+    setAutoEntries(prev => prev.filter(e => e.id !== entry.id));
+    setSelectedEntry(null);
+    showToast("確定しました");
+  }
+
+  // 「保存する」→ 手動入力エントリのみ確定（自動生成とは無関係）
   function handleSave() {
     if (mode === "business" && !form.business) { showToast("事業を選択してください", "error"); return; }
     if (!form.content || !form.amount) { showToast("内容と金額は必須です", "error"); return; }
-    const saved: Entry = { ...form, id: crypto.randomUUID(), tab: activeTab };
-    setEntries((prev) => [saved, ...prev]);
+
+    // 通常コストとして登録
+    const saved: Entry = { ...form, id: crypto.randomUUID(), tab: activeTab, isAuto: false };
+    setEntries(prev => [saved, ...prev]);
+
+    // 固定費チェックがある場合はマスタにも登録
+    if (activeTab === "cost" && isFixed) {
+      const newMaster = addMaster({
+        bizId:      mode === "personal" ? PERSONAL_BIZ_ID : form.business,
+        name:       form.content,
+        amount:     form.amount.replace(/,/g, ""),
+        start_date: fixedStartDate,
+        end_date:   fixedEndDate,
+        memo:       form.memo,
+      });
+      // 今月分は手動登録済みのため自動生成は不要。
+      // masters の useEffect が走るが、下記の除外ロジックで今月分はスキップされる。
+      showToast("コストを登録し、固定費マスタに追加しました");
+    } else {
+      showToast("保存しました");
+    }
+
     setForm(emptyEntry(activeTab));
+    setIsFixed(false);
+    setFixedStartDate("");
+    setFixedEndDate("");
+
     const savedMonth = toYM(saved.occurred_at) || thisYM;
     setViewMonth(savedMonth);
     if (savedMonth !== thisYM) setFormOpen(false);
-    showToast("保存しました");
   }
+
   function handleDelete(id: string) {
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    // entries から削除
+    setEntries(prev => prev.filter(e => e.id !== id));
+    // autoEntries から削除（自動生成を削除＝今月は発生なし）
+    setAutoEntries(prev => prev.filter(e => e.id !== id));
     setSelectedEntry(null);
     showToast("削除しました");
   }
+
   function handleEditSave() {
     if (!editForm || !editForm.content || !editForm.amount) { showToast("内容と金額は必須です", "error"); return; }
-    setEntries((prev) => prev.map((e) => (e.id === editForm.id ? editForm : e)));
+
+    // autoEntries の編集は autoEntries 内で更新（まだ未確定）
+    if (editForm.isAuto) {
+      setAutoEntries(prev => prev.map(e => e.id === editForm.id ? { ...editForm } : e));
+    } else {
+      setEntries(prev => prev.map(e => e.id === editForm.id ? editForm : e));
+    }
     setSelectedEntry(editForm);
     setIsEditing(false);
     showToast("更新しました");
   }
 
-  const monthEntries = entries.filter((e) => {
-    const em = toYM(e.occurred_at) || thisYM;
-    return em === viewMonth && e.tab === activeTab;
-  });
+  // 今月の自動生成エントリを取得（表示用）
+  const currentMonthAutoEntries = autoEntries.filter(
+    e => toYM(e.occurred_at) === viewMonth
+  );
+
+  // 今月表示中のエントリ（確定済み + 自動生成）
+  // 自動生成はコストタブのみ表示
+  const monthEntries = [
+    ...(activeTab === "cost" ? currentMonthAutoEntries : []),
+    ...entries.filter(e => {
+      const em = toYM(e.occurred_at) || thisYM;
+      return em === viewMonth && e.tab === activeTab;
+    }),
+  ];
+
+  // 自動生成エントリが今月コストタブにある場合はバナー表示
+  const hasAutoCosts = isCurrentMonth
+    && activeTab === "cost"
+    && currentMonthAutoEntries.length > 0;
 
   const groupedEntries: { name: string; items: Entry[] }[] = (() => {
     if (mode !== "business") return [{ name: "", items: monthEntries }];
     const map = new Map<string, Entry[]>();
-    BUSINESS_OPTIONS.forEach((b) => map.set(b, []));
-    monthEntries.forEach((e) => {
+    BUSINESS_OPTIONS.forEach(b => map.set(b, []));
+    monthEntries.forEach(e => {
       const key = BUSINESS_OPTIONS.includes(e.business) ? e.business : "その他";
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
@@ -438,10 +676,14 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
   })();
 
   function monthTotal(tab: DataTab): number {
-    return entries.filter((e) => e.tab === tab && (toYM(e.occurred_at) || thisYM) === viewMonth).reduce((s, e) => s + parseAmount(e.amount), 0);
+    // 未確定（自動生成）は合計に含めない
+    return entries
+      .filter(e => e.tab === tab && (toYM(e.occurred_at) || thisYM) === viewMonth)
+      .reduce((s, e) => s + parseAmount(e.amount), 0);
   }
   function totalAmount(tab: DataTab): number {
-    return entries.filter((e) => e.tab === tab).reduce((s, e) => s + parseAmount(e.amount), 0);
+    // 未確定（自動生成）は合計に含めない
+    return entries.filter(e => e.tab === tab).reduce((s, e) => s + parseAmount(e.amount), 0);
   }
 
   // ── Form fields ──────────────────────────────────────────────
@@ -450,10 +692,10 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
       <label className="de-label">事業<span className="de-req">*</span></label>
       <div className="de-select-wrap">
         <select className="de-select" value={form.business}
-          onChange={(e) => setForm({ ...form, business: e.target.value })}
+          onChange={e => setForm({ ...form, business: e.target.value })}
           style={{ color: form.business === "" ? tokens.textMuted : tokens.textPrimary }}>
           <option value="" disabled hidden>選択してください</option>
-          {BUSINESS_OPTIONS.map((o) => <option key={o}>{o}</option>)}
+          {BUSINESS_OPTIONS.map(o => <option key={o}>{o}</option>)}
         </select>
       </div>
     </div>
@@ -462,37 +704,47 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
     <div className="de-group">
       <label className="de-label">内容<span className="de-req">*</span></label>
       <input className="de-input" placeholder={placeholder} value={form.content}
-        onChange={(e) => setForm({ ...form, content: e.target.value })} />
+        maxLength={80}
+        onChange={e => setForm({ ...form, content: e.target.value })} />
+      <div className={`de-char-count ${charCountClass(form.content.length, 80)}`}>
+        {form.content.length} / 80
+      </div>
     </div>
   );
   const fAmount = (
     <div className="de-group">
       <label className="de-label">金額（万円）<span className="de-req">*</span></label>
       <input className="de-input" placeholder="0" value={form.amount}
-        onChange={(e) => setForm({ ...form, amount: e.target.value.replace(/[^\d,]/g, "") })}
-        onBlur={(e) => setForm({ ...form, amount: formatAmount(e.target.value) })}
+        maxLength={8}
+        inputMode="decimal"
+        onChange={e => setForm({ ...form, amount: sanitizeAmount(e.target.value) })}
         style={{ textAlign: "right" }} />
+      <div className="de-hint">最大 999999.9（小数点第1位）</div>
     </div>
   );
   const fOccurredAt = (
     <div className="de-group">
-      <label className="de-label">発生日</label>
+      <label className="de-label">日付</label>
       <input type="date" className="de-input" value={form.occurred_at}
-        onChange={(e) => setForm({ ...form, occurred_at: e.target.value })} />
+        onChange={e => setForm({ ...form, occurred_at: e.target.value })} />
     </div>
   );
   const fDueAt = (
     <div className="de-group">
       <label className="de-label">返済期日</label>
       <input type="date" className="de-input" value={form.due_at}
-        onChange={(e) => setForm({ ...form, due_at: e.target.value })} />
+        onChange={e => setForm({ ...form, due_at: e.target.value })} />
     </div>
   );
   const fMemo = (
     <div className="de-group">
       <label className="de-label">メモ</label>
       <textarea className="de-textarea" placeholder="補足事項など（任意）" value={form.memo}
-        onChange={(e) => setForm({ ...form, memo: e.target.value })} />
+        maxLength={80}
+        onChange={e => setForm({ ...form, memo: e.target.value })} />
+      <div className={`de-char-count ${charCountClass(form.memo.length, 80)}`}>
+        {form.memo.length} / 80
+      </div>
     </div>
   );
   const fYield = (
@@ -500,7 +752,16 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
       <label className="de-label">利回り（年率）</label>
       <div className="de-input-suffix">
         <input className="de-input" placeholder="0.0" value={form.yield_rate}
-          onChange={(e) => setForm({ ...form, yield_rate: e.target.value.replace(/[^\d.]/g, "") })} />
+          maxLength={6}
+          inputMode="decimal"
+          onChange={e => {
+            let v = e.target.value.replace(/[^\d.]/g, "");
+            const parts = v.split(".");
+            if (parts.length > 2) v = parts[0] + "." + parts.slice(1).join("");
+            const [i, d] = v.split(".");
+            v = d !== undefined ? i.slice(0, 3) + "." + d.slice(0, 2) : i.slice(0, 3);
+            setForm({ ...form, yield_rate: v });
+          }} />
         <span className="de-input-suffix-label">%</span>
       </div>
     </div>
@@ -508,28 +769,116 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
 
   const formFields = (
     <div className="de-form-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {mode === "business" && activeTab !== "liability" && (<>{fBusiness}{fContent("例: 店舗売上、設備一式 など")}<div className="de-grid-2">{fOccurredAt}{fAmount}</div>{fMemo}</>)}
+      {mode === "business" && activeTab !== "liability" && activeTab !== "cost" && (<>{fBusiness}{fContent("例: 店舗売上、設備一式 など")}<div className="de-grid-2">{fOccurredAt}{fAmount}</div>{fMemo}</>)}
+      {mode === "business" && activeTab === "cost" && (
+        <>
+          {fBusiness}
+          {fContent("例: 店舗売上、設備一式 など")}
+          <div className="de-grid-2">{fOccurredAt}{fAmount}</div>
+          {fMemo}
+          {/* 固定費チェックボックス */}
+          <label
+            className={`de-fixed-check-row${isFixed ? " checked" : ""}`}
+            htmlFor="de-fixed-checkbox"
+          >
+            <input
+              id="de-fixed-checkbox"
+              type="checkbox"
+              checked={isFixed}
+              onChange={e => setIsFixed(e.target.checked)}
+            />
+            <span className="de-fixed-check-label">固定費として登録（毎月自動生成）</span>
+          </label>
+          {isFixed && (
+            <div className="de-fixed-period-box">
+              <div style={{ fontSize: 12, fontWeight: 600, color: tokens.primary, marginBottom: 2 }}>
+                計上期間
+              </div>
+              <div className="de-grid-2">
+                <div className="de-group">
+                  <label className="de-label">開始日 <span style={{ fontSize: 10.5, color: tokens.textMuted, fontWeight: 400 }}>（空欄で即時）</span></label>
+                  <input type="date" className="de-input" value={fixedStartDate}
+                    onChange={e => setFixedStartDate(e.target.value)} />
+                </div>
+                <div className="de-group">
+                  <label className="de-label">終了日 <span style={{ fontSize: 10.5, color: tokens.textMuted, fontWeight: 400 }}>（空欄で無期限）</span></label>
+                  <input type="date" className="de-input" value={fixedEndDate}
+                    onChange={e => setFixedEndDate(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
       {mode === "business" && activeTab === "liability" && (<>{fBusiness}{fContent("例: 設備投資ローン")}<div className="de-grid-2">{fOccurredAt}{fDueAt}</div><div className="de-grid-2">{fAmount}<div /></div>{fMemo}</>)}
       {mode === "personal" && activeTab === "asset" && (<>{fContent("例: 楽天銀行 普通預金")}<div className="de-grid-2">{fOccurredAt}{fAmount}</div>{fMemo}<div className="de-grid-2">{fYield}<div /></div></>)}
       {mode === "personal" && activeTab === "liability" && (<>{fContent("例: 奨学金、カーローン")}<div className="de-grid-2">{fOccurredAt}{fDueAt}</div><div className="de-grid-2">{fAmount}<div /></div>{fMemo}</>)}
-      {mode === "personal" && (activeTab === "revenue" || activeTab === "cost") && (<>{fContent("例: 給与、副業収入 など")}<div className="de-grid-2">{fOccurredAt}{fAmount}</div>{fMemo}</>)}
+      {mode === "personal" && activeTab === "revenue" && (<>{fContent("例: 給与、副業収入 など")}<div className="de-grid-2">{fOccurredAt}{fAmount}</div>{fMemo}</>)}
+      {mode === "personal" && activeTab === "cost" && (
+        <>
+          {fContent("例: 家賃、保険料 など")}
+          <div className="de-grid-2">{fOccurredAt}{fAmount}</div>
+          {fMemo}
+          {/* 固定費チェックボックス（個人） */}
+          <label
+            className={`de-fixed-check-row${isFixed ? " checked" : ""}`}
+            htmlFor="de-fixed-checkbox-personal"
+          >
+            <input
+              id="de-fixed-checkbox-personal"
+              type="checkbox"
+              checked={isFixed}
+              onChange={e => setIsFixed(e.target.checked)}
+            />
+            <span className="de-fixed-check-label">固定費として登録（毎月自動生成）</span>
+          </label>
+          {isFixed && (
+            <div className="de-fixed-period-box">
+              <div style={{ fontSize: 12, fontWeight: 600, color: tokens.primary, marginBottom: 2 }}>
+                計上期間
+              </div>
+              <div className="de-grid-2">
+                <div className="de-group">
+                  <label className="de-label">開始日 <span style={{ fontSize: 10.5, color: tokens.textMuted, fontWeight: 400 }}>（空欄で即時）</span></label>
+                  <input type="date" className="de-input" value={fixedStartDate}
+                    onChange={e => setFixedStartDate(e.target.value)} />
+                </div>
+                <div className="de-group">
+                  <label className="de-label">終了日 <span style={{ fontSize: 10.5, color: tokens.textMuted, fontWeight: 400 }}>（空欄で無期限）</span></label>
+                  <input type="date" className="de-input" value={fixedEndDate}
+                    onChange={e => setFixedEndDate(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 
   const renderRow = (entry: Entry) => (
-    <div key={entry.id} className="de-row-item"
+    <div key={entry.id}
+      className={`de-row-item${entry.isAuto ? " is-auto" : ""}`}
       onClick={() => { setSelectedEntry(entry); setIsEditing(false); setEditForm(null); }}>
-      <div className="de-row-bar" style={{ background: tabColorMap[entry.tab] }} />
+      <div className="de-row-bar" style={{ background: entry.isAuto ? tokens.textMuted : tabColorMap[entry.tab] }} />
       <div className="de-row-info">
-        <div className="de-row-content">{entry.content}</div>
+        <div className="de-row-content">
+          {entry.content}
+          {entry.isAuto && (
+            <span className="de-badge-auto" style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+              <SparkleIcon />自動
+            </span>
+          )}
+        </div>
         <div className="de-row-sub">
           {entry.occurred_at && <span>{entry.occurred_at}</span>}
           {entry.due_at      && <span className="de-row-due">期日 {entry.due_at}</span>}
           {entry.yield_rate  && <span className="de-row-yield">利回り {entry.yield_rate}%</span>}
           {entry.memo        && <span>メモあり</span>}
+          {entry.isAuto      && <span style={{ color: "#9A6010" }}>未確定・保存で確定</span>}
         </div>
       </div>
-      <div className="de-row-amount" style={{ color: tabColorMap[entry.tab] }}>
+      <div className="de-row-amount" style={{ color: entry.isAuto ? tokens.textMuted : tabColorMap[entry.tab] }}>
         {entry.amount}<span className="de-row-amount-unit">万円</span>
       </div>
       <span className="de-row-chevron"><ChevronRightSmIcon /></span>
@@ -566,7 +915,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
       </div>
 
       <div className="de-panel">
-        <div className={`de-accordion-header ${formOpen ? "open" : ""}`} onClick={() => setFormOpen((v) => !v)}>
+        <div className={`de-accordion-header ${formOpen ? "open" : ""}`} onClick={() => setFormOpen(v => !v)}>
           <div className="de-accordion-title">
             {modeLabel} · {tabLabelMap[activeTab]}
             <span className={`de-badge ${badgeClassMap[activeTab]}`}>{tabNameMap[activeTab]}</span>
@@ -574,7 +923,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
           <div className="de-accordion-right">
             {formOpen && (
               <button className="de-btn de-btn-sm de-btn-ghost"
-                onClick={(e) => { e.stopPropagation(); setForm(emptyEntry(activeTab)); }}>クリア</button>
+                onClick={e => { e.stopPropagation(); setForm(emptyEntry(activeTab)); }}>クリア</button>
             )}
             <span className={`de-chevron ${formOpen ? "open" : ""}`}><ChevronDownIcon /></span>
           </div>
@@ -584,7 +933,9 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
             {formFields}
             <div className="de-footer">
               <button className="de-btn de-btn-ghost" onClick={() => setForm(emptyEntry(activeTab))}>キャンセル</button>
-              <button className="de-btn de-btn-primary" onClick={handleSave}><CheckIcon />保存する</button>
+              <button className="de-btn de-btn-primary" onClick={handleSave}>
+                <CheckIcon />保存する
+              </button>
             </div>
           </>
         )}
@@ -598,6 +949,12 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
               {tabNameMap[activeTab]}
             </span>
             <span style={{ fontSize: 12, color: tokens.textMuted }}>{monthEntries.length}件</span>
+            {/* 自動生成件数バッジ */}
+            {hasAutoCosts && (
+              <span className="de-badge-auto" style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                <SparkleIcon />自動 {currentMonthAutoEntries.length}件
+              </span>
+            )}
           </div>
           <div className="de-pager">
             <button className="de-pager-btn" onClick={handlePrevMonth}><ChevronLeftIcon /></button>
@@ -610,6 +967,22 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
         </div>
 
         <div className="de-panel">
+          {/* 自動生成バナー（今月・コストタブ・事業モードのみ） */}
+          {hasAutoCosts && (
+            <div className="de-auto-banner">
+              <SparkleIcon />
+              <div>
+                <div className="de-auto-banner-title">
+                  固定費が自動生成されています（{currentMonthAutoEntries.length}件）
+                </div>
+                <div className="de-auto-banner-sub">
+                  {mode === "business" ? "初期設定の固定費" : "個人の固定費"}を今月分として仮反映しました。内容を確認・編集し、「保存する」で確定してください。<br />
+                  保存せずに月をまたぐとリセットされます。
+                </div>
+              </div>
+            </div>
+          )}
+
           {monthEntries.length === 0 ? (
             <div className="de-empty">
               <div className="de-empty-icon"><DatabaseIcon /></div>
@@ -618,11 +991,20 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
           ) : mode === "business" ? (
             <div className="de-row-list">
               {groupedEntries.map(({ name, items }) => {
-                const groupTotal = items.reduce((s, e) => s + parseAmount(e.amount), 0);
+                const groupTotal = items.filter(e => !e.isAuto).reduce((s, e) => s + parseAmount(e.amount), 0);
                 return (
                   <div key={name}>
                     <div className="de-group-header">
-                      <span className="de-group-name"><BuildingIcon />{name}<span className="de-group-count">{items.length}件</span></span>
+                      <span className="de-group-name">
+                        <BuildingIcon />{name}
+                        <span className="de-group-count">{items.length}件</span>
+                        {/* 自動生成件数 */}
+                        {items.some(e => e.isAuto) && (
+                          <span className="de-badge-auto" style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                            <SparkleIcon />自動 {items.filter(e => e.isAuto).length}件
+                          </span>
+                        )}
+                      </span>
                       <span className="de-group-total">{groupTotal.toLocaleString("ja-JP")}万円</span>
                     </div>
                     {items.map(renderRow)}
@@ -636,18 +1018,35 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
         </div>
       </div>
 
+      {/* 詳細・編集モーダル */}
       {selectedEntry && (
         <div className="de-overlay"
-          onClick={(e) => { if (e.target === e.currentTarget) { setSelectedEntry(null); setIsEditing(false); } }}>
+          onClick={e => { if (e.target === e.currentTarget) { setSelectedEntry(null); setIsEditing(false); } }}>
           <div className="de-modal">
             <div className="de-modal-header">
               <span className="de-modal-title">
                 {isEditing ? "編集" : "詳細"}
                 <span className={`de-badge ${badgeClassMap[selectedEntry.tab]}`}>{tabNameMap[selectedEntry.tab]}</span>
+                {selectedEntry.isAuto && !isEditing && (
+                  <span className="de-badge-auto" style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                    <SparkleIcon />自動生成
+                  </span>
+                )}
               </span>
               <button className="de-modal-close" onClick={() => { setSelectedEntry(null); setIsEditing(false); }}><CloseIcon /></button>
             </div>
             <div className="de-modal-body">
+              {/* 自動生成の注意書き */}
+              {selectedEntry.isAuto && !isEditing && (
+                <div style={{
+                  background: "#FFFBEB", border: "1px solid #F5C87A", borderRadius: 8,
+                  padding: "10px 14px", marginTop: 14, marginBottom: 4,
+                  fontSize: 12, color: "#9A6010", lineHeight: 1.6,
+                }}>
+                  初期設定の固定費から自動生成されました。<br />
+                  金額・内容を確認し、「保存する」で今月の実績として確定してください。
+                </div>
+              )}
               {isEditing && editForm ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingTop: 16 }}>
                   {mode === "business" && (
@@ -655,8 +1054,8 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
                       <label className="de-label">事業</label>
                       <div className="de-select-wrap">
                         <select className="de-select" value={editForm.business}
-                          onChange={(e) => setEditForm({ ...editForm, business: e.target.value })}>
-                          {BUSINESS_OPTIONS.map((o) => <option key={o}>{o}</option>)}
+                          onChange={e => setEditForm({ ...editForm, business: e.target.value })}>
+                          {BUSINESS_OPTIONS.map(o => <option key={o}>{o}</option>)}
                         </select>
                       </div>
                     </div>
@@ -664,43 +1063,62 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
                   <div className="de-group">
                     <label className="de-label">内容<span className="de-req">*</span></label>
                     <input className="de-input" value={editForm.content}
-                      onChange={(e) => setEditForm({ ...editForm, content: e.target.value })} />
+                      maxLength={80}
+                      onChange={e => setEditForm({ ...editForm, content: e.target.value })} />
+                    <div className={`de-char-count ${charCountClass(editForm.content.length, 80)}`}>
+                      {editForm.content.length} / 80
+                    </div>
                   </div>
                   <div className="de-group">
                     <label className="de-label">金額（万円）<span className="de-req">*</span></label>
                     <input className="de-input" value={editForm.amount}
-                      onChange={(e) => setEditForm({ ...editForm, amount: e.target.value.replace(/[^\d,]/g, "") })}
-                      onBlur={(e) => setEditForm({ ...editForm, amount: formatAmount(e.target.value) })}
+                      maxLength={8}
+                      inputMode="decimal"
+                      onChange={e => setEditForm({ ...editForm, amount: sanitizeAmount(e.target.value) })}
                       style={{ textAlign: "right" }} />
+                    <div className="de-hint">最大 999999.9（小数点第1位）</div>
                   </div>
                   {mode === "personal" && selectedEntry.tab === "asset" && (
                     <div className="de-group">
                       <label className="de-label">利回り（年率）</label>
                       <div className="de-input-suffix">
                         <input className="de-input" value={editForm.yield_rate}
-                          onChange={(e) => setEditForm({ ...editForm, yield_rate: e.target.value.replace(/[^\d.]/g, "") })} />
+                          maxLength={6}
+                          inputMode="decimal"
+                          onChange={e => {
+                            let v = e.target.value.replace(/[^\d.]/g, "");
+                            const parts = v.split(".");
+                            if (parts.length > 2) v = parts[0] + "." + parts.slice(1).join("");
+                            const [i2, d2] = v.split(".");
+                            v = d2 !== undefined ? i2.slice(0, 3) + "." + d2.slice(0, 2) : i2.slice(0, 3);
+                            setEditForm({ ...editForm, yield_rate: v });
+                          }} />
                         <span className="de-input-suffix-label">%</span>
                       </div>
                     </div>
                   )}
                   <div className="de-grid-2">
                     <div className="de-group">
-                      <label className="de-label">発生日</label>
+                      <label className="de-label">日付</label>
                       <input type="date" className="de-input" value={editForm.occurred_at}
-                        onChange={(e) => setEditForm({ ...editForm, occurred_at: e.target.value })} />
+                        onChange={e => setEditForm({ ...editForm, occurred_at: e.target.value })} />
                     </div>
                     {selectedEntry.tab === "liability" && (
                       <div className="de-group">
                         <label className="de-label">期日</label>
                         <input type="date" className="de-input" value={editForm.due_at}
-                          onChange={(e) => setEditForm({ ...editForm, due_at: e.target.value })} />
+                          onChange={e => setEditForm({ ...editForm, due_at: e.target.value })} />
                       </div>
                     )}
                   </div>
                   <div className="de-group">
                     <label className="de-label">メモ</label>
                     <textarea className="de-textarea" value={editForm.memo}
-                      onChange={(e) => setEditForm({ ...editForm, memo: e.target.value })} />
+                      maxLength={80}
+                      onChange={e => setEditForm({ ...editForm, memo: e.target.value })} />
+                    <div className={`de-char-count ${charCountClass(editForm.memo.length, 80)}`}>
+                      {editForm.memo.length} / 80
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -730,7 +1148,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
                     </div>
                   )}
                   <div className="de-detail-row">
-                    <span className="de-detail-key">発生日</span>
+                    <span className="de-detail-key">日付</span>
                     <span className="de-detail-val">{selectedEntry.occurred_at || "—"}</span>
                   </div>
                   {selectedEntry.tab === "liability" && (
@@ -750,7 +1168,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
             </div>
             <div className="de-modal-footer">
               <button className="de-btn de-btn-danger" onClick={() => handleDelete(selectedEntry.id)}>
-                <TrashIcon />削除
+                <TrashIcon />削除{selectedEntry.isAuto ? "（今月は発生なし）" : ""}
               </button>
               <div style={{ display: "flex", gap: 8 }}>
                 {isEditing ? (
@@ -759,10 +1177,18 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
                     <button className="de-btn de-btn-primary" onClick={handleEditSave}><CheckIcon />更新する</button>
                   </>
                 ) : (
-                  <button className="de-btn de-btn-primary"
-                    onClick={() => { setEditForm({ ...selectedEntry }); setIsEditing(true); }}>
-                    <EditIcon />編集
-                  </button>
+                  <>
+                    <button className="de-btn de-btn-ghost"
+                      onClick={() => { setEditForm({ ...selectedEntry }); setIsEditing(true); }}>
+                      <EditIcon />編集
+                    </button>
+                    {selectedEntry.isAuto && (
+                      <button className="de-btn de-btn-primary"
+                        onClick={() => handleConfirmAutoEntry(selectedEntry)}>
+                        <CheckIcon />保存する
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>

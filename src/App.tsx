@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { FixedCostProvider } from "./contexts/Fixedcostcontext";
 import Layout from "./components/Layout";
 //import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -216,11 +217,12 @@ const App = () => {
   return (
     <Router basename="/WealthPath_Demo">
       <AuthProvider>
-        <AppRoutes />
+        <FixedCostProvider>
+          <AppRoutes />
+        </FixedCostProvider>
       </AuthProvider>
     </Router>
   );
 };
 
 export default App;
-
