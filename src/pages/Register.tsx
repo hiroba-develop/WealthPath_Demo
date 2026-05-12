@@ -392,7 +392,6 @@ function OnboardingModal({ onComplete }: { onComplete: () => void }) {
   // キー: "personal-{id}-content" | "personal-{id}-amount"
   //      "biz-{bizId}-name" | "biz-{bizId}-fixed-{rowId}-content" | "biz-{bizId}-fixed-{rowId}-amount"
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
-  const hasErrors = Object.keys(stepErrors).length > 0;
 
   // Step2: 事業情報
   const [businesses, setBusinesses] = useState<BizEntry[]>([newBiz()]);
@@ -816,7 +815,6 @@ function OnboardingModal({ onComplete }: { onComplete: () => void }) {
                           if (decPart === undefined) return trimInt;
                           return trimInt + "." + decPart.slice(0, 2);
                         };
-                        const rateNum = parseFloat(biz.variableRate || "0");
                         const isCustom = biz.variableRate !== String(vrate.rate);
                         return (
                           <div>

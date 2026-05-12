@@ -257,15 +257,6 @@ const VARIABLE_RATE: Record<BizType, { rate: number; desc: string }> = {
   "その他サービス":      { rate: 25, desc: "外注・消耗品費が売上の約25%" },
 };
 
-// ── 型定義 ───────────────────────────────────────────────────────
-interface FixedCostRow {
-  id: string;
-  content:    string; // 内容
-  start_date: string; // 計上期間（開始）YYYY-MM-DD
-  end_date:   string; // 計上期間（終了）YYYY-MM-DD（空=無期限）
-  amount:     string; // 金額
-  memo:       string; // メモ
-}
 
 interface BizCard {
   id: string;
@@ -283,9 +274,6 @@ interface BizCard {
   isEditing:    boolean;
 }
 
-function newFixedCost(): FixedCostRow {
-  return { id: crypto.randomUUID(), content: "", start_date: "", end_date: "", amount: "", memo: "" };
-}
 function newBizCard(): BizCard {
   return {
     id: crypto.randomUUID(), name: "", type: "飲食・小売",

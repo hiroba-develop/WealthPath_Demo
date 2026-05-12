@@ -361,10 +361,7 @@ function charCountClass(len: number, max: number): string {
 function emptyEntry(tab: DataTab): Entry {
   return { id: crypto.randomUUID(), tab, business: "", content: "", occurred_at: "", due_at: "", amount: "", yield_rate: "", memo: "" };
 }
-function formatAmount(val: string): string {
-  const n = parseInt(val.replace(/,/g, ""), 10);
-  return isNaN(n) ? "" : n.toLocaleString("ja-JP");
-}
+
 function toYM(dateStr: string): string { return dateStr ? dateStr.slice(0, 7) : ""; }
 function formatYM(ym: string): string {
   if (!ym) return "";
@@ -595,7 +592,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
 
     // 固定費チェックがある場合はマスタにも登録
     if (activeTab === "cost" && isFixed) {
-      const newMaster = addMaster({
+      addMaster({
         bizId:      mode === "personal" ? PERSONAL_BIZ_ID : form.business,
         name:       form.content,
         amount:     form.amount.replace(/,/g, ""),
