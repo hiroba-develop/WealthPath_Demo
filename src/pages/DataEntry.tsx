@@ -479,8 +479,8 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
 
   const { masters, addMaster } = useFixedCost();
 
-  const [activeTab,     setActiveTab]     = useState<DataTab>("cost");
-  const [form,          setForm]          = useState<Entry>(emptyEntry("cost"));
+  const [activeTab,     setActiveTab]     = useState<DataTab>("asset");
+  const [form,          setForm]          = useState<Entry>(emptyEntry("asset"));
   const [formOpen,      setFormOpen]      = useState(true);
   const [entries,       setEntries]       = useState<Entry[]>(sampleEntries);
 
@@ -721,7 +721,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
   );
   const fOccurredAt = (
     <div className="de-group">
-      <label className="de-label">日付</label>
+      <label className="de-label">発生日</label>
       <input type="date" className="de-input" value={form.occurred_at}
         onChange={e => setForm({ ...form, occurred_at: e.target.value })} />
     </div>
@@ -1096,7 +1096,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
                   )}
                   <div className="de-grid-2">
                     <div className="de-group">
-                      <label className="de-label">日付</label>
+                      <label className="de-label">発生日</label>
                       <input type="date" className="de-input" value={editForm.occurred_at}
                         onChange={e => setEditForm({ ...editForm, occurred_at: e.target.value })} />
                     </div>
@@ -1145,7 +1145,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
                     </div>
                   )}
                   <div className="de-detail-row">
-                    <span className="de-detail-key">日付</span>
+                    <span className="de-detail-key">発生日</span>
                     <span className="de-detail-val">{selectedEntry.occurred_at || "—"}</span>
                   </div>
                   {selectedEntry.tab === "liability" && (
