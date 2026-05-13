@@ -869,7 +869,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
         </div>
         <div className="de-row-sub">
           {entry.occurred_at && <span>{entry.occurred_at}</span>}
-          {entry.due_at      && <span className="de-row-due">期日 {entry.due_at}</span>}
+          {entry.due_at      && <span className="de-row-due">返済期日 {entry.due_at}</span>}
           {entry.yield_rate  && <span className="de-row-yield">利回り {entry.yield_rate}%</span>}
           {entry.memo        && <span>メモあり</span>}
           {entry.isAuto      && <span style={{ color: "#9A6010" }}>未確定・保存で確定</span>}
@@ -1102,7 +1102,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
                     </div>
                     {selectedEntry.tab === "liability" && (
                       <div className="de-group">
-                        <label className="de-label">期日</label>
+                        <label className="de-label">返済期日</label>
                         <input type="date" className="de-input" value={editForm.due_at}
                           onChange={e => setEditForm({ ...editForm, due_at: e.target.value })} />
                       </div>
@@ -1150,7 +1150,7 @@ const DataEntry = ({ mode }: { mode: Mode }) => {
                   </div>
                   {selectedEntry.tab === "liability" && (
                     <div className="de-detail-row">
-                      <span className="de-detail-key">期日</span>
+                      <span className="de-detail-key">返済期日</span>
                       <span className="de-detail-val">{selectedEntry.due_at || "—"}</span>
                     </div>
                   )}
